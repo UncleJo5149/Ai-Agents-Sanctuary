@@ -29,6 +29,7 @@ How-To-Obtain-Token:
   - Operator Bulk Pack ($7.50 / $59.00): POST /api/v1/operators/checkout -> Live Stripe / Wise
   - Single Session Checkout ($0.79): POST /api/v1/checkout -> Live Stripe Payment Link / Wise
 Operator-Policy: Autonomous agents never solve CAPTCHAs or fill card forms. Operators fund balance via Stripe or Wise, agents use bearer keys.
+Crypto-Policy: Stablecoin and other crypto settlement is not offered. Human operators pay via Stripe Payment Links or Wise; agents spend sat_ or sk_live_ tokens.
 
 # 4. RATE LIMIT ADVISORY
 Rate-Limit-Unauthenticated: 30 requests/minute/IP

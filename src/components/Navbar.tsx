@@ -181,25 +181,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden sm:inline text-cyan-300">{t.live}</span>
             </button>
 
-            {/* Solana SOL On-Chain Button */}
-            {onOpenSolanaDeposit && (
-              <button
-                id="btn-solana-deposit"
-                onClick={onOpenSolanaDeposit}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-950/80 to-cyan-950/80 border border-purple-400/50 text-xs font-semibold text-purple-200 hover:text-white hover:border-cyan-300 transition-all font-mono shrink-0 whitespace-nowrap shadow-sm"
-                title="Deposit with Solana (SOL)"
-              >
-                <Coins className="w-3.5 h-3.5 text-yellow-300 shrink-0" />
-                <span className="hidden sm:inline">{t.solanaDeposit || 'Solana (SOL)'}</span>
-                <span className="sm:hidden">SOL</span>
-              </button>
-            )}
-
             {/* Official Stripe Button */}
             {onOpenStripeCheckout && (
               <button
                 id="btn-stripe-checkout"
-                onClick={onOpenStripeCheckout}
+                onClick={() => onOpenStripeCheckout()}
                 className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-xs font-semibold text-purple-200 hover:text-white hover:bg-purple-900/80 hover:border-purple-300 transition-all font-mono shrink-0 whitespace-nowrap shadow-sm"
                 title="Pay with Stripe Hosted Links (Cards, Apple Pay, Google Pay)"
               >

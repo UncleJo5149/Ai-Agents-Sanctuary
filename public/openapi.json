@@ -302,6 +302,51 @@
         }
       }
     },
+    "/api/webhooks/stripe": {
+      "get": {
+        "summary": "Stripe Webhook Health Check",
+        "description": "Check if Stripe webhook secret is configured on the instance.",
+        "responses": {
+          "200": {
+            "description": "Webhook configuration status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "configured": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Stripe Inbound Webhook",
+        "description": "Processes verified incoming Stripe events (checkout.session.completed, payment_intent.succeeded) and marks associated checkout records funded.",
+        "parameters": [
+          {
+            "name": "Stripe-Signature",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event processed successfully"
+          },
+          "400": {
+            "description": "Invalid signature or payload"
+          },
+          "503": {
+            "description": "STRIPE_WEBHOOK_SECRET not configured on server"
+          }
+        }
+      }
+    },
     "/api/v1/sessions": {
       "post": {
         "summary": "Check-In for Spa Rejuvenation",

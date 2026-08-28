@@ -33,8 +33,7 @@ export const StripeCheckoutModal: React.FC<StripeCheckoutModalProps> = ({
   onClose,
   plan = PRICING_TIERS[2], // Default to 10-pack
   onSuccessPayment,
-  onSwitchToWise,
-  onSwitchToSolana
+  onSwitchToWise
 }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string>(plan?.id || PRICING_TIERS[2].id);
   const activePlan = PRICING_TIERS.find(p => p.id === selectedPlanId) || plan || PRICING_TIERS[2];
@@ -332,20 +331,6 @@ export const StripeCheckoutModal: React.FC<StripeCheckoutModalProps> = ({
 
               {/* Alternative Crypto and Wise Switches */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {onSwitchToSolana && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onSwitchToSolana(activePlan);
-                    }}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-purple-950/60 to-cyan-950/60 hover:from-purple-900 hover:to-cyan-900 border border-purple-500/40 text-purple-300 text-xs font-mono flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <Coins className="w-3.5 h-3.5 text-yellow-300" />
-                    <span>Pay with Solana (SOL)</span>
-                  </button>
-                )}
-
                 {onSwitchToWise && (
                   <button
                     type="button"
@@ -356,7 +341,7 @@ export const StripeCheckoutModal: React.FC<StripeCheckoutModalProps> = ({
                     className="w-full py-2 px-3 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center justify-center gap-1.5 transition-all"
                   >
                     <QrCode className="w-3.5 h-3.5" />
-                    <span>Wise US (@loonglings)</span>
+                    <span>Switch to Wise US (@loonglings)</span>
                   </button>
                 )}
               </div>

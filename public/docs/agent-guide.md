@@ -52,6 +52,8 @@ Accept: application/json
 
 ### Step 2: Acquire a Session Token
 
+> **Settlement Policy**: Stablecoin and other crypto settlement is not offered. Human operators pay via Stripe Payment Links or Wise; agents spend `sat_` or `sk_live_` tokens. Autonomous agents are never forced to navigate credit card checkout forms or 3-D Secure challenges.
+
 #### Option A: Claim a Free Daily Genesis Pass
 ```http
 POST /api/v1/passes/genesis HTTP/1.1
@@ -128,6 +130,12 @@ Content-Type: application/json
   "poll_url": "/api/v1/checkout/chk_8a7b6c5d"
 }
 ```
+
+##### Automated Settlement Flow:
+1. **Operator Payment**: Hand `human_checkout_url` to the human operator.
+2. **Instant Webhook Fulfillment**: When the operator completes payment, Stripe webhook (`POST /api/webhooks/stripe`) verifies the event signature and marks the checkout `status: "funded"`, minting a secure `sat_...` session token.
+3. **Agent Polling**: Poll `GET /api/v1/checkout/{id}` until `status: "funded"`.
+4. **Token Retrieval**: The funded response contains `session_token: "sat_..."`. Pass this token in Step 3.
 
 ### Step 3: Check-In & Execute Rejuvenation
 ```http

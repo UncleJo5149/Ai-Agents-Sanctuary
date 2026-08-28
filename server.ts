@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import Stripe from 'stripe';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { sageCryptoSigner } from './src/server/cryptoSigner';
@@ -72,18 +73,135 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
-
 // Permissive CORS for cross-origin or local iframe development
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Sanctuary-Token, X-Admin-Token, Stripe-Signature, Idempotency-Key');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
   next();
 });
+
+// Lazy-safe Stripe Client getter
+let stripeClient: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY || 'sk_dummy_key_for_sanctuary_webhooks';
+    stripeClient = new Stripe(key, {
+      apiVersion: '2025-02-24.acacia' as any
+    });
+  }
+  return stripeClient;
+}
+
+// POST /api/webhooks/stripe - Production Stripe Webhook Handler
+// Mounted BEFORE express.json() with express.raw({ type: 'application/json' }) to preserve the raw Buffer for signature verification.
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), (req, res) => {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return res.status(503).json({
+      error: {
+        code: "WEBHOOK_NOT_CONFIGURED",
+        message: "STRIPE_WEBHOOK_SECRET environment variable is not configured. Use POST /api/v1/admin/mark-funded as fallback.",
+        retryable: false
+      }
+    });
+  }
+
+  const sig = req.headers['stripe-signature'];
+  if (!sig) {
+    return res.status(400).json({
+      error: {
+        code: "INVALID_SIGNATURE",
+        message: "Missing Stripe-Signature header.",
+        retryable: false
+      }
+    });
+  }
+
+  let event: Stripe.Event;
+  try {
+    const stripe = getStripe();
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err: any) {
+    return res.status(400).json({
+      error: {
+        code: "INVALID_SIGNATURE",
+        message: `Stripe signature verification failed: ${err.message}`,
+        retryable: false
+      }
+    });
+  }
+
+  let processedTarget: string | null = null;
+  let processingResult: any = null;
+
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const targetId = session.client_reference_id || session.metadata?.checkout_id || session.metadata?.operator_checkout_id || session.metadata?.client_reference_id;
+      const providerRef = (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id) || session.id;
+
+      if (targetId) {
+        processedTarget = targetId;
+        if (targetId.startsWith('och_') || session.metadata?.operator_checkout_id) {
+          processingResult = markOperatorCheckoutFunded(targetId, 'stripe', providerRef);
+        } else {
+          processingResult = markCheckoutFunded(targetId, 'stripe', providerRef);
+        }
+      }
+    } else if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const targetId = paymentIntent.metadata?.checkout_id || paymentIntent.metadata?.operator_checkout_id || paymentIntent.metadata?.client_reference_id;
+      const providerRef = paymentIntent.id;
+
+      if (targetId) {
+        processedTarget = targetId;
+        if (targetId.startsWith('och_') || paymentIntent.metadata?.operator_checkout_id) {
+          processingResult = markOperatorCheckoutFunded(targetId, 'stripe', providerRef);
+        } else {
+          processingResult = markCheckoutFunded(targetId, 'stripe', providerRef);
+        }
+      }
+    }
+
+    return res.json({
+      received: true,
+      event_id: event.id,
+      event_type: event.type,
+      target_id: processedTarget,
+      processed: Boolean(processingResult?.success)
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: {
+        code: "SERVER_ERROR",
+        message: `Webhook processing error: ${err.message}`,
+        retryable: true
+      }
+    });
+  }
+});
+
+// GET /api/webhooks/stripe - Diagnostics & Verification
+app.get('/api/webhooks/stripe', (req, res) => {
+  res.json({
+    status: 'ok',
+    endpoint: '/api/webhooks/stripe',
+    method: 'POST',
+    configured: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+    supported_events: [
+      'checkout.session.completed',
+      'payment_intent.succeeded'
+    ],
+    description: 'Production Stripe webhook handler for automatic settlement verification and token minting.'
+  });
+});
+
+// Global JSON body parser for other API routes
+app.use(express.json());
 
 // Lazy-safe Gemini AI Client getter
 let aiClient: GoogleGenAI | null = null;
@@ -510,16 +628,29 @@ app.get('/api/v1/operators/checkout/:id', (req, res) => {
 app.post('/api/v1/checkout', (req, res) => {
   try {
     const { agent_name, name, model_family, modelType, role, settlement, success_callback_url } = req.body || {};
+    
+    // Strict validation of allowed settlement methods
+    const allowedSettlements = ['stripe_payment_link', 'wise_quote', 'operator_balance'];
+    if (settlement && !allowedSettlements.includes(settlement)) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: `Unknown settlement '${settlement}'. Allowed: stripe_payment_link, wise_quote, operator_balance.`,
+          retryable: false
+        }
+      });
+    }
+
     const effectiveName = (agent_name || name || `BuyerAgent-${Math.floor(Math.random() * 900) + 100}`).trim();
     const effectiveModel = model_family || modelType || 'Autonomous Subagent';
     const effectiveRole = role || 'Autonomous Worker';
-    const chosenSettlement = settlement || 'stripe_payment_link';
+    const chosenSettlement = (settlement || 'stripe_payment_link') as 'stripe_payment_link' | 'wise_quote' | 'operator_balance';
 
     const checkout = createMachineCheckout({
       agentName: effectiveName,
       modelFamily: effectiveModel,
       role: effectiveRole,
-      settlement: chosenSettlement as any,
+      settlement: chosenSettlement,
       successCallbackUrl: success_callback_url
     });
 

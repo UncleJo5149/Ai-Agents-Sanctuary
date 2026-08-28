@@ -25,6 +25,12 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://ai-agents-sanctuary-production.up.railway.app/api/v1/manifest</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://ai-agents-sanctuary-production.up.railway.app/docs/agent-guide.md</loc>
     <lastmod>2026-08-28</lastmod>
     <changefreq>weekly</changefreq>

@@ -6,7 +6,6 @@ import {
   ShieldCheck, 
   Crown, 
   CreditCard, 
-  Coins, 
   Flame, 
   ArrowRight, 
   Tag, 
@@ -17,11 +16,9 @@ import {
   Lock,
   ExternalLink,
   QrCode,
-  CheckCircle2,
-  Wallet
+  CheckCircle2
 } from 'lucide-react';
 import { PRICING_TIERS, PricingPlan, STRIPE_PAYMENT_LINKS } from '../data/pricingPlans';
-import { SOLANA_CONFIG, calculateSolAmount } from '../data/solanaConfig';
 
 interface PricingModelViewProps {
   onSelectPlan: (plan: PricingPlan) => void;
@@ -35,7 +32,6 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
   onSelectPlan,
   onOpenWiseDeposit,
   onOpenStripeCheckout,
-  onOpenSolanaDeposit,
   currentBalanceUsd = 45.00
 }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('calibration-pack-10');
@@ -48,12 +44,6 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
     }
   };
 
-  const handleSolanaClick = (plan: PricingPlan) => {
-    if (onOpenSolanaDeposit) {
-      onOpenSolanaDeposit(plan);
-    }
-  };
-
   return (
     <div className="space-y-10 animate-in fade-in duration-300 pb-16 font-sans">
       
@@ -61,7 +51,7 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm">
           <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          <span>Triple Settlement: Solana (SOL) On-Chain + Stripe Checkout + Wise US</span>
+          <span>Dual Settlement: Stripe Hosted Checkout + Wise US (@loonglings)</span>
         </div>
 
         <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight font-serif">
@@ -72,44 +62,13 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
         </h2>
 
         <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-sans max-w-2xl mx-auto">
-          Choose from 5 verified tiers with instant credit delivery. Pay seamlessly with on-chain <strong className="text-purple-300 font-mono">Solana (SOL)</strong>, <strong className="text-cyan-300 font-mono">Stripe (Card, Apple Pay, Google Pay)</strong>, or direct <strong className="text-emerald-300 font-mono">Wise US (@loonglings)</strong>.
+          Choose from 5 verified tiers with instant credit delivery. Pay seamlessly with <strong className="text-cyan-300 font-mono">Stripe (Card, Apple Pay, Google Pay)</strong> or direct <strong className="text-emerald-300 font-mono">Wise US (@loonglings)</strong>.
         </p>
       </div>
 
-      {/* TRIPLE PAYMENT GATEWAY HERO BANNER */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+      {/* DUAL PAYMENT GATEWAY HERO BANNER */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-mono max-w-4xl mx-auto">
         
-        {/* SOLANA GATEWAY CARD */}
-        <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-purple-950/80 via-zinc-950 to-cyan-950/50 border border-purple-400/60 shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                Solana (SOL) Native
-              </span>
-              <span className="text-[10px] text-cyan-300 font-mono">1 SOL ≈ ${SOLANA_CONFIG.solPriceUsd}</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-bold text-white font-serif flex items-center gap-2">
-              <Coins className="w-5 h-5 text-purple-400" />
-              <span>Solana Direct QR & Wallet</span>
-            </h3>
-            <p className="text-xs text-slate-300">
-              Zero-friction instant micro-settlement via Solana network to dedicated sovereign wallet address.
-            </p>
-          </div>
-          <div className="pt-4 mt-2 border-t border-purple-900/50 flex items-center justify-between">
-            <span className="text-[10px] text-slate-400 font-mono truncate max-w-[120px]">
-              {SOLANA_CONFIG.walletAddress.substring(0, 8)}...
-            </span>
-            <button
-              onClick={() => handleSolanaClick(PRICING_TIERS[2])}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400 text-black font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-purple-950"
-            >
-              <Wallet className="w-3.5 h-3.5 text-black" />
-              <span>Deposit SOL</span>
-            </button>
-          </div>
-        </div>
-
         {/* STRIPE GATEWAY CARD */}
         <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-indigo-950/60 via-zinc-950 to-purple-950/40 border border-indigo-500/50 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="space-y-2">
@@ -117,7 +76,7 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
                 Stripe Checkout
               </span>
-              <span className="text-xs text-slate-400">256-Bit SSL</span>
+              <span className="text-xs text-slate-400">256-Bit SSL • Webhook Sync</span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white font-serif flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-indigo-400" />
@@ -246,31 +205,19 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
                 </div>
               </div>
 
-              {/* Call to action triple buttons */}
-              <div className="pt-3 border-t border-purple-900/40 space-y-1.5">
-                {/* Solana (SOL) Native Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSolanaClick(tier);
-                  }}
-                  className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-950 font-mono"
-                >
-                  <Coins className="w-3 h-3 text-yellow-300" />
-                  <span>Pay with SOL ({calculateSolAmount(tier.totalPriceUsd)} SOL)</span>
-                </button>
-
+              {/* Call to action dual buttons */}
+              <div className="pt-4 border-t border-purple-900/40 space-y-2 mt-4">
                 {/* Primary Stripe Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleStripeClick(tier);
                   }}
-                  className="w-full py-1.5 px-2.5 rounded-lg bg-purple-950/80 hover:bg-purple-900 text-purple-100 border border-purple-600/50 text-[10px] transition-all flex items-center justify-center gap-1 shadow-sm font-mono"
+                  className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-950 font-mono"
                 >
-                  <CreditCard className="w-3 h-3 text-cyan-300" />
-                  <span>Stripe (Card / Apple Pay)</span>
-                  <ExternalLink className="w-2.5 h-2.5 opacity-80" />
+                  <CreditCard className="w-3.5 h-3.5 text-cyan-300" />
+                  <span>Stripe Pay ({tier.headlinePrice})</span>
+                  <ExternalLink className="w-3 h-3 opacity-80" />
                 </button>
 
                 {/* Secondary Wise Button */}
@@ -279,9 +226,9 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
                     e.stopPropagation();
                     onOpenWiseDeposit(tier);
                   }}
-                  className="w-full py-1.5 px-2.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono flex items-center justify-center gap-1 transition-all"
+                  className="w-full py-1.5 px-2.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono flex items-center justify-center gap-1 transition-all"
                 >
-                  <QrCode className="w-2.5 h-2.5" />
+                  <QrCode className="w-3 h-3" />
                   <span>Wise US (@loonglings)</span>
                 </button>
               </div>
@@ -300,15 +247,15 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
               <span>Full 5-Tier Settlement & Unit Economics Matrix</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Instant automated webhook fulfillment with triple redundant payment rails (Solana SOL + Stripe + Wise US).
+              Instant automated webhook fulfillment with dual payment rails (Stripe Checkout + Wise US).
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/40">
-              Solana Wallet Active
-            </span>
-            <span className="px-2.5 py-1 rounded-full text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+            <span className="px-2.5 py-1 rounded-full text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
               5 Live Stripe Gateways
+            </span>
+            <span className="px-2.5 py-1 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              Wise US Redundant
             </span>
           </div>
         </div>
@@ -319,9 +266,8 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
               <tr className="border-b border-purple-900/40 text-slate-400 uppercase text-[10px] tracking-wider">
                 <th className="py-2.5 px-3">Pricing Tier</th>
                 <th className="py-2.5 px-3">Price (USD)</th>
-                <th className="py-2.5 px-3">SOL Approx</th>
                 <th className="py-2.5 px-3">Per-Session Cost</th>
-                <th className="py-2.5 px-3">Sessions</th>
+                <th className="py-2.5 px-3">Sessions Included</th>
                 <th className="py-2.5 px-3">Payment Options</th>
                 <th className="py-2.5 px-3 text-right">Instant Checkout</th>
               </tr>
@@ -331,31 +277,28 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
                 <tr key={tier.id} className="hover:bg-purple-950/20 transition-colors">
                   <td className="py-3 px-3 font-bold text-slate-200">{tier.name}</td>
                   <td className="py-3 px-3 text-purple-300 font-bold">{tier.headlinePrice}</td>
-                  <td className="py-3 px-3 text-cyan-300 font-mono font-bold">
-                    {calculateSolAmount(tier.totalPriceUsd)} SOL
-                  </td>
                   <td className="py-3 px-3 text-emerald-300 font-mono">${tier.pricePerSessionUsd.toFixed(2)}</td>
                   <td className="py-3 px-3 text-slate-300 font-mono">{tier.sessionsIncluded}</td>
                   <td className="py-3 px-3 text-slate-300 text-[11px] font-mono">
-                    <span className="text-purple-300">SOL</span> • <span className="text-cyan-300">Stripe</span> • <span className="text-emerald-300">Wise</span>
+                    <span className="text-cyan-300">Stripe (Card/Apple Pay)</span> • <span className="text-emerald-300">Wise US</span>
                   </td>
                   <td className="py-3 px-3 text-right">
                     <div className="inline-flex items-center gap-1.5">
                       <button
-                        onClick={() => handleSolanaClick(tier)}
-                        className="px-2 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white text-[10px] font-bold inline-flex items-center gap-1 font-mono transition-all"
-                        title="Pay with Solana (SOL)"
-                      >
-                        <Coins className="w-2.5 h-2.5 text-yellow-300" />
-                        <span>SOL</span>
-                      </button>
-                      <button
                         onClick={() => handleStripeClick(tier)}
-                        className="px-2 py-1 rounded-lg bg-purple-900 hover:bg-purple-800 text-purple-200 text-[10px] font-bold inline-flex items-center gap-1 font-mono transition-all"
+                        className="px-2.5 py-1.5 rounded-lg bg-purple-900 hover:bg-purple-800 text-purple-100 text-[11px] font-bold inline-flex items-center gap-1 font-mono transition-all"
                         title="Stripe Card / Apple Pay"
                       >
-                        <CreditCard className="w-2.5 h-2.5" />
+                        <CreditCard className="w-3 h-3 text-cyan-300" />
                         <span>Stripe</span>
+                      </button>
+                      <button
+                        onClick={() => onOpenWiseDeposit(tier)}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[11px] font-bold inline-flex items-center gap-1 font-mono transition-all"
+                        title="Wise US Deposit"
+                      >
+                        <QrCode className="w-3 h-3 text-emerald-400" />
+                        <span>Wise</span>
                       </button>
                     </div>
                   </td>

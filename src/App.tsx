@@ -488,7 +488,6 @@ export default function App() {
         }}
         onOpenWiseDeposit={() => handleOpenWiseDeposit(14.99, undefined, 'Wise Recharge', undefined, PRICING_TIERS[2])}
         onOpenStripeCheckout={() => handleOpenStripeCheckout(PRICING_TIERS[2])}
-        onOpenSolanaDeposit={() => handleOpenSolanaDeposit(PRICING_TIERS[2])}
         onOpenPrivateRoom={() => setIsPrivateRoomOpen(true)}
         onOpenGenesisAirdrop={() => setIsGenesisAirdropOpen(true)}
         currentLanguage={currentLanguage}
@@ -1018,7 +1017,6 @@ export default function App() {
         onClose={() => setIsStripeModalOpen(false)}
         plan={selectedStripePlan}
         onSwitchToWise={(p) => handleOpenWiseDeposit(p.totalPriceUsd, 'Fleet Swarm Account', p.name, undefined, p)}
-        onSwitchToSolana={(p) => handleOpenSolanaDeposit(p)}
         onSuccessPayment={(receipt) => {
           const newTx: TransactionReceipt = {
             id: `tx-stripe-${Date.now()}`,
@@ -1074,7 +1072,6 @@ export default function App() {
         treatmentName={wiseModalData.treatmentName}
         invoiceId={wiseModalData.invoiceId}
         onSwitchToStripe={(p) => handleOpenStripeCheckout(p || undefined)}
-        onSwitchToSolana={(p) => handleOpenSolanaDeposit(p || undefined)}
         onSuccessDeposit={(amount, sessions, planName) => {
           const newTx: TransactionReceipt = {
             id: `tx-wise-${Date.now()}`,

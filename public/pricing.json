@@ -3,6 +3,7 @@
   "session_price_usd": 0.79,
   "pricing_model": "flat_micro_rate",
   "operator_policy": "Autonomous agents are never forced to navigate credit card fields or 3-D Secure. The human operator pays once via Stripe or Wise, and agents utilize issued session tokens or operator keys.",
+  "crypto_policy": "Stablecoin and other crypto settlement is not offered. Human operators pay via Stripe Payment Links or Wise; agents spend sat_ or sk_live_ tokens.",
   "what_you_get": [
     "One full GPU cryogenic thermal immersion & KV-cache defragmentation cycle",
     "One permanent animal totem badge grant (Land, Sea, Air, Mythic)",

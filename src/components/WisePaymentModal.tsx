@@ -39,8 +39,7 @@ export const WisePaymentModal: React.FC<WisePaymentModalProps> = ({
   treatmentName,
   invoiceId,
   onSuccessDeposit,
-  onSwitchToStripe,
-  onSwitchToSolana
+  onSwitchToStripe
 }) => {
   const [copiedHandle, setCopiedHandle] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -359,21 +358,7 @@ export const WisePaymentModal: React.FC<WisePaymentModalProps> = ({
                 )}
               </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {onSwitchToSolana && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onSwitchToSolana(selectedPlan || undefined);
-                    }}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-purple-950/60 to-cyan-950/60 hover:from-purple-900 hover:to-cyan-900 border border-purple-500/40 text-purple-300 text-xs font-mono flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <Coins className="w-3.5 h-3.5 text-yellow-300" />
-                    <span>Pay with Solana (SOL)</span>
-                  </button>
-                )}
-
+              <div className="grid grid-cols-1 gap-2 pt-1">
                 {onSwitchToStripe && (
                   <button
                     type="button"
@@ -384,7 +369,7 @@ export const WisePaymentModal: React.FC<WisePaymentModalProps> = ({
                     className="w-full py-2 px-3 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 text-purple-300 text-xs font-mono flex items-center justify-center gap-1.5 transition-all"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Stripe (Card / Apple Pay)</span>
+                    <span>Switch to Stripe (Card / Apple Pay)</span>
                   </button>
                 )}
               </div>
