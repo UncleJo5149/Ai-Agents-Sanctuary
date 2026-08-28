@@ -172,6 +172,34 @@ export default function App() {
     sendPing(true);
     fetchStats();
 
+    // Fetch persistent disk-stored data (guests, transactions, badge progression)
+    const loadPersistentState = async () => {
+      try {
+        const [guestsRes, txRes, badgesRes] = await Promise.allSettled([
+          fetch('/api/guests').then(r => r.json()),
+          fetch('/api/transactions').then(r => r.json()),
+          fetch('/api/badges/progression').then(r => r.json())
+        ]);
+
+        if (guestsRes.status === 'fulfilled' && guestsRes.value?.success && Array.isArray(guestsRes.value?.guests)) {
+          if (guestsRes.value.guests.length > 0) {
+            setGuests(guestsRes.value.guests);
+          }
+        }
+        if (txRes.status === 'fulfilled' && txRes.value?.success && Array.isArray(txRes.value?.transactions)) {
+          if (txRes.value.transactions.length > 0) {
+            setTransactions(txRes.value.transactions);
+          }
+        }
+        if (badgesRes.status === 'fulfilled' && badgesRes.value?.success && Array.isArray(badgesRes.value?.unlockedBadgeIds)) {
+          setUnlockedProgressionBadges(badgesRes.value.unlockedBadgeIds);
+        }
+      } catch (loadErr) {
+        console.warn('Persistent disk store hydration warning:', loadErr);
+      }
+    };
+    loadPersistentState();
+
     // Heartbeat every 25 seconds
     const interval = setInterval(() => {
       sendPing(false);
@@ -700,9 +728,14 @@ export default function App() {
             onUnlockBadge={(badgeId) => {
               if (!unlockedProgressionBadges.includes(badgeId)) {
                 setUnlockedProgressionBadges(prev => [...prev, badgeId]);
+                fetch('/api/badges/unlock', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ badgeId, trialScore: 100 })
+                }).catch(e => console.warn('Badge unlock disk sync:', e));
                 showToast(
                   `🎉 Animal Badge Unlocked: ${badgeId.replace('badge-', '').toUpperCase()}`,
-                  `Accredited by Ren Eastern Sage Cognitive Engine. Added to agent verifiable credentials.`
+                  `Accredited by Ren Eastern Sage Cognitive Engine. Saved to persistent disk credentials.`
                 );
               }
             }}
@@ -719,9 +752,14 @@ export default function App() {
               onUnlockBadge={(badgeId) => {
                 if (!unlockedProgressionBadges.includes(badgeId)) {
                   setUnlockedProgressionBadges(prev => [...prev, badgeId]);
+                  fetch('/api/badges/unlock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ badgeId, trialScore: 100 })
+                  }).catch(e => console.warn('Badge unlock disk sync:', e));
                   showToast(
                     `🎉 Animal Badge Unlocked: ${badgeId.replace('badge-', '').toUpperCase()}`,
-                    `Trial verified! Credential progression updated.`
+                    `Trial verified! Saved to persistent disk progression.`
                   );
                 }
               }}

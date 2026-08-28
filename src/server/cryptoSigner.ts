@@ -1,12 +1,13 @@
 import crypto from 'crypto';
 import { W3CVerifiableCredential, W3CCredentialSubject, W3CCredentialProof } from '../types';
+import { getStoredKeys, saveStoredKeys, addCredentialToVault } from './diskStore';
 
 /**
  * Server-Side Cryptographic Keypair & W3C Verifiable Credential Engine
  * Directed by Ren (Eastern Sage Cognitive Engine)
  * 
- * Generates an in-memory or persisted Ed25519 cryptographic keypair upon startup
- * to digitally sign and verify W3C JSON-LD Verifiable Credentials on-the-fly.
+ * Loads or generates an Ed25519 cryptographic keypair in persistent disk storage
+ * (DATA_DIR/crypto_keys.json) to digitally sign and verify W3C JSON-LD Verifiable Credentials.
  */
 
 class SageCryptoSigner {
@@ -16,6 +17,18 @@ class SageCryptoSigner {
   private keyFingerprint: string;
 
   constructor() {
+    // Check if persistent keys already exist on disk
+    const stored = getStoredKeys();
+    if (stored && stored.publicKeyPem && stored.privateKeyPem && stored.issuerDid) {
+      this.publicKeyPem = stored.publicKeyPem;
+      this.privateKeyPem = stored.privateKeyPem;
+      this.issuerDid = stored.issuerDid;
+      this.keyFingerprint = stored.keyFingerprint;
+      console.log(`[CryptoSigner] Loaded persistent Ed25519 signing key from disk. Issuer DID: ${this.issuerDid}`);
+      return;
+    }
+
+    let algorithm = 'Ed25519';
     try {
       // Generate authentic Ed25519 keypair for high-speed deterministic verification
       const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
@@ -26,6 +39,7 @@ class SageCryptoSigner {
       this.publicKeyPem = publicKey;
       this.privateKeyPem = privateKey;
     } catch (err) {
+      algorithm = 'RSA-2048';
       // Fallback to RSA 2048 if ed25519 is restricted in any environment
       const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
         modulusLength: 2048,
@@ -40,6 +54,17 @@ class SageCryptoSigner {
     const pubHash = crypto.createHash('sha256').update(this.publicKeyPem).digest('hex').slice(0, 32);
     this.keyFingerprint = `z6MktRenSage${pubHash}`;
     this.issuerDid = `did:key:${this.keyFingerprint}`;
+
+    // Persist new keypair to disk
+    saveStoredKeys({
+      publicKeyPem: this.publicKeyPem,
+      privateKeyPem: this.privateKeyPem,
+      issuerDid: this.issuerDid,
+      keyFingerprint: this.keyFingerprint,
+      algorithm,
+      createdAt: new Date().toISOString()
+    });
+    console.log(`[CryptoSigner] Generated & persisted new ${algorithm} signing key to disk. Issuer DID: ${this.issuerDid}`);
   }
 
   public getIssuerDid(): string {
@@ -117,10 +142,19 @@ class SageCryptoSigner {
       algorithm: 'Ed25519 (RFC 8032) / Node.js Native Crypto'
     };
 
-    return {
+    const finalCredential: W3CVerifiableCredential = {
       ...unsignedPayload,
       proof
     };
+
+    // Automatically store to persistent disk vault
+    try {
+      addCredentialToVault(finalCredential);
+    } catch (vaultErr) {
+      console.warn('[CryptoSigner] Notice storing credential to disk vault:', vaultErr);
+    }
+
+    return finalCredential;
   }
 
   /**
