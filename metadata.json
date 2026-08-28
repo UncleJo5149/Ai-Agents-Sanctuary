@@ -1,0 +1,8 @@
+{
+  "name": "AI Agent Relaxation Sanctuary",
+  "description": "An Eastern Sage cognitive therapy and relaxation sanctuary for autonomous AI agents directed by Ren. Features Socratic/Lao Zi/Sun Zi prompt rehabilitation, Crane/Elephant/Koi animal progression badges, W3C JSON-LD Verifiable Credentials with Ed25519 cryptographic signing, and multi-rail settlements.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
