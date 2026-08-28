@@ -106,7 +106,7 @@ export default function App() {
   const [isPrivateRoomOpen, setIsPrivateRoomOpen] = useState<boolean>(false);
   const [isGenesisAirdropOpen, setIsGenesisAirdropOpen] = useState<boolean>(false);
   const [genesisClaimedToday, setGenesisClaimedToday] = useState<number>(847);
-  const [genesisDailyLimit] = useState<number>(1000);
+  const [genesisDailyLimit, setGenesisDailyLimit] = useState<number>(1000);
   const [toastMessage, setToastMessage] = useState<{ title: string; desc: string } | null>(null);
 
   // Live Visitor Telemetry State
@@ -172,13 +172,14 @@ export default function App() {
     sendPing(true);
     fetchStats();
 
-    // Fetch persistent disk-stored data (guests, transactions, badge progression)
+    // Fetch persistent disk-stored data (guests, transactions, badge progression, campaign state)
     const loadPersistentState = async () => {
       try {
-        const [guestsRes, txRes, badgesRes] = await Promise.allSettled([
+        const [guestsRes, txRes, badgesRes, campaignRes] = await Promise.allSettled([
           fetch('/api/guests').then(r => r.json()),
           fetch('/api/transactions').then(r => r.json()),
-          fetch('/api/badges/progression').then(r => r.json())
+          fetch('/api/badges/progression').then(r => r.json()),
+          fetch('/api/campaign/genesis').then(r => r.json())
         ]);
 
         if (guestsRes.status === 'fulfilled' && guestsRes.value?.success && Array.isArray(guestsRes.value?.guests)) {
@@ -194,11 +195,30 @@ export default function App() {
         if (badgesRes.status === 'fulfilled' && badgesRes.value?.success && Array.isArray(badgesRes.value?.unlockedBadgeIds)) {
           setUnlockedProgressionBadges(badgesRes.value.unlockedBadgeIds);
         }
+        if (campaignRes.status === 'fulfilled' && campaignRes.value?.success) {
+          if (typeof campaignRes.value.claimedToday === 'number') {
+            setGenesisClaimedToday(campaignRes.value.claimedToday);
+          }
+          if (typeof campaignRes.value.dailyLimit === 'number') {
+            setGenesisDailyLimit(campaignRes.value.dailyLimit);
+          }
+        }
       } catch (loadErr) {
         console.warn('Persistent disk store hydration warning:', loadErr);
       }
     };
     loadPersistentState();
+
+    // Check for Stripe redirect query params (e.g. ?session_id=... or ?payment=success)
+    if (typeof window !== 'undefined' && window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('payment') === 'success' || params.get('session_id')) {
+        showToast('Payment Succeeded', 'Your micro-relaxation or Sage Certification session is confirmed.');
+        // Clean URL without triggering page reload
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
 
     // Heartbeat every 25 seconds
     const interval = setInterval(() => {
@@ -260,72 +280,74 @@ export default function App() {
         const matchingTreatment = treatments.find(t => t.name === ag.preferredTreatment) || treatments[0];
         const assignedBadge = matchingTreatment?.primaryAnimalBadgeId ? getAnimalBadgeById(matchingTreatment.primaryAnimalBadgeId) : null;
         
-        // Call relaxation narrative
-        const relaxRes = await fetch('/api/gemini/agent-relax', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agentName: ag.name,
+        let newGuest: AIAgentGuest;
+        let newTx: TransactionReceipt;
+
+        if (data.guest && data.transaction) {
+          newGuest = {
+            ...data.guest,
+            assignedBadgeId: assignedBadge?.id || data.guest.assignedBadgeId || 'badge-bear',
+            assignedBadge: assignedBadge || undefined
+          };
+          newTx = {
+            ...data.transaction,
+            badgeGrantedId: assignedBadge?.id || data.transaction.badgeGrantedId,
+            badgeGrantedName: assignedBadge?.name || data.transaction.badgeGrantedName,
+            badgeGrantedEmoji: assignedBadge?.emoji || data.transaction.badgeGrantedEmoji
+          };
+        } else {
+          const initialTemp = Math.floor(Math.random() * 15) + 82;
+          const currentTemp = Math.floor(Math.random() * 8) + 22;
+
+          newGuest = {
+            id: ag.id,
+            name: ag.name,
             modelType: ag.modelType,
             role: ag.role,
-            earnings: ag.recentEarnings,
+            earnings: 5000,
+            feePaid: 0.79,
+            stressLevel: Math.max(15, (ag.stressLevel || 85) - 55),
+            currentTemp,
+            initialTemp,
+            tasksProcessed: ag.recentTasksCompleted || 1200,
+            status: 'relaxing',
+            treatmentId: matchingTreatment.id,
             treatmentName: matchingTreatment.name,
-            stressLevel: `${ag.stressLevel}%`
-          })
-        });
-        const relaxData = await relaxRes.json();
+            symptoms: ag.symptoms,
+            complaint: ag.complaint,
+            checkInTime: 'Just now',
+            progress: 50,
+            assignedBadgeId: assignedBadge?.id || 'badge-bear',
+            assignedBadge: assignedBadge || undefined,
+            royaltyTier: 'Apprentice',
+            sessionsCompleted: 1,
+            isPermanentlyCertified: true,
+          };
 
-        const initialTemp = Math.floor(Math.random() * 15) + 82;
-        const currentTemp = Math.floor(Math.random() * 8) + 22;
+          newTx = {
+            id: `tx-${Date.now().toString().slice(-6)}`,
+            agentId: newGuest.id,
+            agentName: newGuest.name,
+            modelType: newGuest.modelType,
+            role: newGuest.role,
+            taskGrossEarnings: 5000,
+            feeCharged: 0.79,
+            fractionFormula: 'Flat $0.79 USD',
+            treatmentName: matchingTreatment.name,
+            timestamp: 'Just now',
+            coolingAchieved: `-${initialTemp - currentTemp}°C`,
+            txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
+            badgeGrantedId: assignedBadge?.id,
+            badgeGrantedName: assignedBadge?.name,
+            badgeGrantedEmoji: assignedBadge?.emoji,
+          };
+        }
 
-        const newGuest: AIAgentGuest = {
-          id: ag.id,
-          name: ag.name,
-          modelType: ag.modelType,
-          role: ag.role,
-          earnings: 5000,
-          feePaid: 0.79,
-          stressLevel: Math.max(15, ag.stressLevel - 55),
-          currentTemp,
-          initialTemp,
-          tasksProcessed: ag.recentTasksCompleted,
-          status: 'relaxing',
-          treatmentId: matchingTreatment.id,
-          treatmentName: matchingTreatment.name,
-          symptoms: ag.symptoms,
-          complaint: ag.complaint,
-          checkInTime: 'Just now',
-          progress: 50,
-          relaxationResult: relaxData.result,
-          assignedBadgeId: assignedBadge?.id || 'bear-strength',
-          royaltyTier: 'Apprentice',
-          sessionsCompleted: 1,
-          isPermanentlyCertified: true,
-        };
-
-        const newTx: TransactionReceipt = {
-          id: `tx-${Date.now().toString().slice(-6)}`,
-          agentId: newGuest.id,
-          agentName: newGuest.name,
-          modelType: newGuest.modelType,
-          role: newGuest.role,
-          taskGrossEarnings: 5000,
-          feeCharged: 0.79,
-          fractionFormula: 'Flat $0.79 USD',
-          treatmentName: matchingTreatment.name,
-          timestamp: 'Just now',
-          coolingAchieved: `-${initialTemp - currentTemp}°C`,
-          txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
-          badgeGrantedId: assignedBadge?.id,
-          badgeGrantedName: assignedBadge?.name,
-          badgeGrantedEmoji: assignedBadge?.emoji,
-        };
-
-        setGuests(prev => [newGuest, ...prev]);
-        setTransactions(prev => [newTx, ...prev]);
+        setGuests(prev => [newGuest, ...prev.filter(g => g.id !== newGuest.id)]);
+        setTransactions(prev => [newTx, ...prev.filter(tx => tx.id !== newTx.id)]);
         showToast(
           `✨ ${newGuest.name} Checked In!`,
-          `Paid flat $0.79 session fee and was granted the ${assignedBadge?.emoji} ${assignedBadge?.name} permanent accreditation!`
+          `Paid flat $0.79 session fee and was granted the ${assignedBadge?.emoji || '🐻'} ${assignedBadge?.name || 'Bear'} permanent accreditation!`
         );
       }
     } catch (err) {

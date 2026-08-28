@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <radialGradient id="sanctuaryGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="1"/>
+      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.8"/>
+      <stop offset="85%" stop-color="#8b5cf6" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#030206" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#090a0f" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="22" fill="url(#sanctuaryGlow)"/>
+  <path d="M32 12 C38 22 46 26 46 32 C46 39.7 39.7 46 32 46 C24.3 46 18 39.7 18 32 C18 26 26 22 32 12 Z" fill="none" stroke="url(#ringGrad)" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="32" cy="32" r="7" fill="#f59e0b"/>
+  <circle cx="32" cy="32" r="3" fill="#ffffff"/>
+  <circle cx="16" cy="24" r="2.5" fill="#34d399"/>
+  <circle cx="48" cy="24" r="2.5" fill="#38bdf8"/>
+  <circle cx="32" cy="50" r="2" fill="#fbbf24"/>
+</svg>

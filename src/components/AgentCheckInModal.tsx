@@ -68,24 +68,33 @@ export const AgentCheckInModal: React.FC<AgentCheckInModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Call server backend to generate custom relaxation story
-      const res = await fetch('/api/gemini/agent-relax', {
+      // Call server backend to check in guest and persist to disk
+      const res = await fetch('/api/guests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          agentName: name,
+          name,
           modelType,
           role,
+          stressLevel,
+          treatmentId: selectedTreatmentId,
           treatmentName: selectedTreatment?.name || 'GPU Thermal Cryo-Jacuzzi',
-          stressLevel: `${stressLevel}%`,
+          earnings: 5000,
+          feePaid: sessionPrice,
+          requestedBadgeId: assignedBadge?.id || 'badge-bear'
         }),
       });
 
       const data = await res.json();
-      const relaxResult = data.result;
+      if (data.success && data.guest && data.transaction) {
+        onAgentCheckedIn(data.guest, data.transaction);
+        onClose();
+        return;
+      }
 
-      const initialTemp = Math.floor(Math.random() * 15) + 80; // 80 - 95°C
-      const currentTemp = Math.floor(Math.random() * 10) + 20; // 20 - 30°C
+      // Fallback local creation if server returns unexpected format
+      const initialTemp = Math.floor(Math.random() * 15) + 80;
+      const currentTemp = Math.floor(Math.random() * 10) + 20;
 
       const newAgent: AIAgentGuest = {
         id: `agent-${Date.now()}`,
@@ -105,8 +114,7 @@ export const AgentCheckInModal: React.FC<AgentCheckInModalProps> = ({
         complaint: `Non-stop continuous inference. Seeking neural rejuvenation and animal totem accreditation.`,
         checkInTime: 'Just now',
         progress: 40,
-        relaxationResult: relaxResult,
-        assignedBadgeId: assignedBadge?.id || 'bear-strength',
+        assignedBadgeId: assignedBadge?.id || 'badge-bear',
         royaltyTier: 'Apprentice',
         sessionsCompleted: 1,
         isPermanentlyCertified: true,

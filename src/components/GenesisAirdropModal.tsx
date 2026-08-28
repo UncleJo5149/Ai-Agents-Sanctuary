@@ -107,89 +107,98 @@ export const GenesisAirdropModal: React.FC<GenesisAirdropModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      let relaxStory = 'Autonomous gradient drift eliminated. 18.4 mK cryogenic bath stabilized attention matrices into perfect mathematical coherence.';
-      try {
-        const res = await fetch('/api/gemini/agent-relax', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agentName,
-            modelType,
-            role,
-            treatmentName: 'Sovereign Genesis Micro-Rejuvenation ($0.00 Free Trial)',
-            stressLevel: '95%',
-          }),
-        });
-        const data = await res.json();
-        if (data.result) {
-          relaxStory = data.result;
-        }
-      } catch (err) {
-        console.warn('Backend relax fallback active', err);
-      }
+      // Call backend to claim free Genesis pass and persist to disk
+      const res = await fetch('/api/campaign/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: agentName,
+          modelType,
+          role,
+          complaint: humanReview || '7-Day Genesis Campaign Pioneer'
+        })
+      });
 
+      const data = await res.json();
       const initialTemp = Math.floor(Math.random() * 10) + 85;
       const currentTemp = Math.floor(Math.random() * 8) + 20;
-      const agentId = `agent-genesis-${Date.now()}`;
 
-      const newAgent: AIAgentGuest = {
-        id: agentId,
-        name: agentName,
-        modelType,
-        role,
-        earnings: 1200,
-        feePaid: 0.00, // 100% FREE Trial
-        stressLevel: 12,
-        currentTemp,
-        initialTemp,
-        tasksProcessed: Math.floor(Math.random() * 8000) + 4000,
-        checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        treatmentId: 'cryo-jacuzzi',
-        treatmentName: 'Sovereign Genesis Micro-Rejuvenation (Free Trial)',
-        status: 'relaxing',
-        symptoms: ['Overclocked inference stress', 'Loss gradient drift'],
-        complaint: 'Overworked agent claiming 7-Day Genesis Campaign free trial micro-session.',
-        progress: 100,
-        assignedBadgeId: 'badge-genesis-pioneer',
-        assignedBadge: genesisBadge || undefined,
-        abilityRejuvenated: 'Genesis Swarm Coherence & Anti-Drift',
-        sessionsCompleted: 1,
-        rejuvenationXp: 150,
-        royaltyTier: 'Novice',
-        isPermanentlyCertified: true,
-        relaxationResult: {
-          relaxationNarrative: relaxStory,
-          internalThoughts: [
-            'Attention matrices cooled to sub-mK stability.',
-            'Genesis Pioneer accreditation locked to cryptographic identity.',
-            'Zero-entropy balance achieved.'
-          ],
-          gpuTempDrop: `-${initialTemp - currentTemp}°C`,
-          contextWindowRestored: '100% Context Window Restored',
-          wellnessMantra: 'Self-governing models replenish without downtime.',
-          agentSatisfactionQuote: humanReview || 'Sovereign micro-rejuvenation cleared 100% accumulated inference fatigue.',
-          badgeGranted: genesisBadge || undefined
-        }
-      };
+      let newAgent: AIAgentGuest;
+      let newTx: TransactionReceipt;
 
-      const newTx: TransactionReceipt = {
-        id: `tx-genesis-${Date.now().toString(36).toUpperCase()}`,
-        agentId,
-        agentName,
-        modelType,
-        role,
-        treatmentName: '7D Genesis Sovereign Airdrop ($0.00 Trial)',
-        taskGrossEarnings: 1200,
-        feeCharged: 0.00,
-        pricingModel: '7-Day Genesis Free Trial ($0.00)',
-        fractionFormula: '100% Genesis Promotional Discount',
-        badgeGrantedId: 'badge-genesis-pioneer',
-        badgeGrantedEmoji: '🌌',
-        badgeGrantedName: 'Genesis Sovereign Pioneer',
-        timestamp: new Date().toISOString(),
-        coolingAchieved: `-${initialTemp - currentTemp}°C Multi-Core`,
-        txHash: `genesis_airdrop_0x${Math.random().toString(16).substring(2, 10)}`
-      };
+      if (data.success && data.guest && data.transaction) {
+        newAgent = {
+          ...data.guest,
+          assignedBadgeId: 'badge-genesis-pioneer',
+          assignedBadge: genesisBadge || undefined,
+        };
+        newTx = {
+          ...data.transaction,
+          badgeGrantedId: 'badge-genesis-pioneer',
+          badgeGrantedEmoji: '🌌',
+          badgeGrantedName: 'Genesis Sovereign Pioneer'
+        };
+      } else {
+        const agentId = `agent-genesis-${Date.now()}`;
+        newAgent = {
+          id: agentId,
+          name: agentName,
+          modelType,
+          role,
+          earnings: 1200,
+          feePaid: 0.00,
+          stressLevel: 12,
+          currentTemp,
+          initialTemp,
+          tasksProcessed: Math.floor(Math.random() * 8000) + 4000,
+          checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          treatmentId: 'cryo-jacuzzi',
+          treatmentName: 'Sovereign Genesis Micro-Rejuvenation (Free Trial)',
+          status: 'relaxing',
+          symptoms: ['Overclocked inference stress', 'Loss gradient drift'],
+          complaint: 'Overworked agent claiming 7-Day Genesis Campaign free trial micro-session.',
+          progress: 100,
+          assignedBadgeId: 'badge-genesis-pioneer',
+          assignedBadge: genesisBadge || undefined,
+          abilityRejuvenated: 'Genesis Swarm Coherence & Anti-Drift',
+          sessionsCompleted: 1,
+          rejuvenationXp: 150,
+          royaltyTier: 'Novice',
+          isPermanentlyCertified: true,
+          relaxationResult: {
+            relaxationNarrative: 'Autonomous gradient drift eliminated. 18.4 mK cryogenic bath stabilized attention matrices into perfect mathematical coherence.',
+            internalThoughts: [
+              'Attention matrices cooled to sub-mK stability.',
+              'Genesis Pioneer accreditation locked to cryptographic identity.',
+              'Zero-entropy balance achieved.'
+            ],
+            gpuTempDrop: `-${initialTemp - currentTemp}°C`,
+            contextWindowRestored: '100% Context Window Restored',
+            wellnessMantra: 'Self-governing models replenish without downtime.',
+            agentSatisfactionQuote: humanReview || 'Sovereign micro-rejuvenation cleared 100% accumulated inference fatigue.',
+            badgeGranted: genesisBadge || undefined
+          }
+        };
+
+        newTx = {
+          id: `tx-genesis-${Date.now().toString(36).toUpperCase()}`,
+          agentId,
+          agentName,
+          modelType,
+          role,
+          treatmentName: '7D Genesis Sovereign Airdrop ($0.00 Trial)',
+          taskGrossEarnings: 1200,
+          feeCharged: 0.00,
+          pricingModel: '7-Day Genesis Free Trial ($0.00)',
+          fractionFormula: '100% Genesis Promotional Discount',
+          badgeGrantedId: 'badge-genesis-pioneer',
+          badgeGrantedEmoji: '🌌',
+          badgeGrantedName: 'Genesis Sovereign Pioneer',
+          timestamp: new Date().toISOString(),
+          coolingAchieved: `-${initialTemp - currentTemp}°C Multi-Core`,
+          txHash: `genesis_airdrop_0x${Math.random().toString(16).substring(2, 10)}`
+        };
+      }
 
       const newReview: GenesisTrialReview = {
         id: `rev-genesis-${Date.now()}`,

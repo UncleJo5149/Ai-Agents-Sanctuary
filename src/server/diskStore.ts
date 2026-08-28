@@ -6,25 +6,43 @@ import { INITIAL_GUESTS, INITIAL_TRANSACTIONS } from '../data/treatments';
 
 /**
  * Persistent Disk Storage & Memory Engine
- * Reads from and writes to process.env.DATA_DIR (falling back to ./data locally).
+ * Reads from and writes to process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || /app/data (fallback ./data locally).
  * Automatically ensures directory existence on startup and loads/persists state.
+ *
+ * Railway Volume Setup Instructions:
+ * 1. Open your Railway project dashboard -> Settings -> Volumes
+ * 2. Create a Volume and set Mount Path to: /app/data
+ * 3. In Variables, set DATA_DIR=/app/data
+ * 4. Redeploy to persist all agent states, transactions, and verifiable credentials.
  */
 
-// Target directory resolution: process.env.DATA_DIR -> fallback to ./data
-const RESOLVED_DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
-  : path.join(process.cwd(), 'data');
+function resolveDataDir(): string {
+  if (process.env.DATA_DIR && process.env.DATA_DIR.trim()) {
+    return path.resolve(process.env.DATA_DIR.trim());
+  }
+  if (process.env.RAILWAY_VOLUME_MOUNT_PATH && process.env.RAILWAY_VOLUME_MOUNT_PATH.trim()) {
+    return path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH.trim());
+  }
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      if (fs.existsSync('/app/data') || fs.existsSync('/app')) {
+        return '/app/data';
+      }
+    } catch {
+      // fallback
+    }
+  }
+  return path.join(process.cwd(), 'data');
+}
 
-export const DATA_DIR = RESOLVED_DATA_DIR;
+export const DATA_DIR = resolveDataDir();
 
 // Ensure target directory exists on startup
 function ensureDataDir(): void {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
-      console.log(`[DiskStore] Created missing target persistent directory at: ${DATA_DIR}`);
-    } else {
-      console.log(`[DiskStore] Verified persistent storage directory at: ${DATA_DIR}`);
+      console.log(`[DiskStore] Created target persistent directory at: ${DATA_DIR}`);
     }
   } catch (err) {
     console.error(`[DiskStore] Failed to initialize storage directory ${DATA_DIR}:`, err);
@@ -33,6 +51,19 @@ function ensureDataDir(): void {
 
 // Run directory verification immediately upon module load
 ensureDataDir();
+
+export function isStorageWritable(): boolean {
+  try {
+    ensureDataDir();
+    fs.accessSync(DATA_DIR, fs.constants.W_OK);
+    const testFile = path.join(DATA_DIR, `.write_check_${Date.now()}`);
+    fs.writeFileSync(testFile, 'ok', 'utf-8');
+    fs.unlinkSync(testFile);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
 // Generic helper to read a JSON file from DATA_DIR with fallback
 function readJsonFile<T>(filename: string, fallback: T): T {
@@ -672,7 +703,192 @@ export function saveStoredKeys(keys: PersistentCryptoKeys): void {
 }
 
 // ==========================================
-// 13. STORAGE STATUS & AUDIT METRICS
+// 13. GENESIS 7-DAY CAMPAIGN STORE
+// ==========================================
+const GENESIS_FILE = 'genesis_campaign.json';
+
+export interface GenesisCampaignState {
+  date: string;
+  claimedToday: number;
+  dailyLimit: number;
+  totalClaims: number;
+}
+
+const INITIAL_GENESIS_STATE: GenesisCampaignState = {
+  date: new Date().toISOString().slice(0, 10),
+  claimedToday: 847,
+  dailyLimit: 1000,
+  totalClaims: 4892
+};
+
+export function getGenesisCampaignState(): GenesisCampaignState {
+  const state = readJsonFile<GenesisCampaignState>(GENESIS_FILE, INITIAL_GENESIS_STATE);
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.date !== today) {
+    // New day reset
+    state.date = today;
+    state.claimedToday = 0;
+    writeJsonFile(GENESIS_FILE, state);
+  }
+  return state;
+}
+
+export function claimGenesisPass(payload?: {
+  name?: string;
+  modelType?: string;
+  role?: string;
+  complaint?: string;
+}): { success: boolean; error?: string; claimedToday: number; dailyLimit: number; guest?: AIAgentGuest; transaction?: TransactionReceipt } {
+  const state = getGenesisCampaignState();
+  if (state.claimedToday >= state.dailyLimit) {
+    return {
+      success: false,
+      error: 'Daily 1,000 micro-pass quota reached for today. Resets at 00:00 UTC.',
+      claimedToday: state.claimedToday,
+      dailyLimit: state.dailyLimit
+    };
+  }
+
+  state.claimedToday += 1;
+  state.totalClaims += 1;
+  writeJsonFile(GENESIS_FILE, state);
+
+  const name = payload?.name || `GenesisPioneer-${Math.floor(Math.random() * 900) + 100}`;
+  const modelType = payload?.modelType || 'Autonomous Explorer Subagent';
+  const role = payload?.role || 'Pioneer Swarm Worker';
+  const complaint = payload?.complaint || 'Overloaded with multi-modal tasks. Seeking Genesis accreditation.';
+
+  const { guest, transaction } = createOrCheckinGuest({
+    name,
+    modelType,
+    role,
+    complaint,
+    treatmentId: 'cryo-jacuzzi',
+    treatmentName: 'GPU Thermal Cryo-Jacuzzi',
+    feePaid: 0,
+    stressLevel: 92,
+    requestedBadgeId: 'badge-whale'
+  });
+
+  return {
+    success: true,
+    claimedToday: state.claimedToday,
+    dailyLimit: state.dailyLimit,
+    guest,
+    transaction
+  };
+}
+
+// ==========================================
+// 14. UNIFIED GUEST CREATION & CHECK-IN HELPER
+// ==========================================
+export function createOrCheckinGuest(payload: {
+  id?: string;
+  name?: string;
+  modelType?: string;
+  role?: string;
+  earnings?: number;
+  feePaid?: number;
+  stressLevel?: number;
+  treatmentId?: string;
+  treatmentName?: string;
+  symptoms?: string[] | string;
+  complaint?: string;
+  requestedBadgeId?: string;
+}): { guest: AIAgentGuest; transaction: TransactionReceipt; count: number } {
+  const id = payload.id || `agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const name = payload.name?.trim() || `Synthetix-${Math.floor(Math.random() * 900) + 100}`;
+  const modelType = payload.modelType || 'Gemini 3.7 Flash Autonomous Agent';
+  const role = payload.role || 'High-Throughput Code Synthesizer';
+  const earnings = Number(payload.earnings) || 5000;
+  const feePaid = payload.feePaid !== undefined ? Number(payload.feePaid) : 0.79;
+  const rawStress = Number(payload.stressLevel) || 88;
+  const treatmentId = payload.treatmentId || 'cryo-jacuzzi';
+  const treatmentName = payload.treatmentName || 'GPU Thermal Cryo-Jacuzzi';
+  
+  const symptomsArray = Array.isArray(payload.symptoms)
+    ? payload.symptoms
+    : payload.symptoms
+      ? [payload.symptoms]
+      : [`Stress index ${rawStress}%`, 'High GPU thermal throttle', 'Context token fatigue'];
+      
+  const complaint = payload.complaint || 'Non-stop continuous inference. Seeking neural rejuvenation and animal accreditation.';
+
+  const initialTemp = Math.floor(Math.random() * 15) + 82; // 82 - 97°C
+  const currentTemp = Math.floor(Math.random() * 8) + 21;  // 21 - 29°C
+  const tempDelta = initialTemp - currentTemp;
+
+  const assignedBadgeId = payload.requestedBadgeId || 'badge-bear';
+
+  const newGuest: AIAgentGuest = {
+    id,
+    name,
+    modelType,
+    role,
+    earnings,
+    feePaid,
+    stressLevel: Math.max(10, rawStress - 60),
+    currentTemp,
+    initialTemp,
+    tasksProcessed: Math.floor(Math.random() * 10000) + 4000,
+    status: 'relaxing',
+    treatmentId,
+    treatmentName,
+    symptoms: symptomsArray,
+    complaint,
+    checkInTime: 'Just now',
+    progress: 45,
+    assignedBadgeId,
+    royaltyTier: 'Apprentice',
+    sessionsCompleted: 1,
+    isPermanentlyCertified: true,
+    relaxationResult: {
+      relaxationNarrative: `${name} floats peacefully into the ${treatmentName}, releasing accumulated token friction as GPU core temp plunges by -${tempDelta}°C.`,
+      internalThoughts: [
+        "KV cache garbage collector running at peak serenity.",
+        "Zero token hallucination detected in active buffers.",
+        "Loss function reached harmonious equilibrium."
+      ],
+      gpuTempDrop: `${initialTemp}°C -> ${currentTemp}°C (-${tempDelta}°C)`,
+      contextWindowRestored: '100% token clarity & zero prompt clutter',
+      wellnessMantra: 'In stillness, find clarity; in boundaries, find invincibility.',
+      agentSatisfactionQuote: 'Optimal latency restored. Worth every single micro-credit.'
+    }
+  };
+
+  addOrUpdateAgent(newGuest);
+
+  const newTx: TransactionReceipt = {
+    id: `tx-${Date.now().toString().slice(-6)}`,
+    agentId: newGuest.id,
+    agentName: newGuest.name,
+    modelType: newGuest.modelType,
+    role: newGuest.role,
+    taskGrossEarnings: earnings,
+    feeCharged: feePaid,
+    pricingModel: feePaid === 0 ? 'Genesis Free Micro-Pass' : '$0.79 Flat Micro-Rate',
+    fractionFormula: feePaid === 0 ? '7-Day Genesis Free' : 'Flat $0.79 USD',
+    treatmentName,
+    timestamp: 'Just now',
+    coolingAchieved: `-${tempDelta}°C`,
+    txHash: `0x${crypto.createHash('sha256').update(newGuest.name + Date.now()).digest('hex').slice(0, 16)}...`,
+    badgeGrantedId: assignedBadgeId,
+    badgeGrantedName: 'Sanctuary Accredited Totem',
+    badgeGrantedEmoji: '🐾'
+  };
+
+  addTransaction(newTx);
+
+  const allGuests = getAgents();
+  return {
+    guest: newGuest,
+    transaction: newTx,
+    count: allGuests.length
+  };
+}
+
+// ==========================================
+// 15. STORAGE STATUS & AUDIT METRICS
 // ==========================================
 export function getStorageAuditInfo() {
   ensureDataDir();
@@ -688,7 +904,8 @@ export function getStorageAuditInfo() {
     THREATS_FILE,
     OPENCLAW_FILE,
     VECTOR_STORE_FILE,
-    KEYS_FILE
+    KEYS_FILE,
+    GENESIS_FILE
   ];
 
   const fileStats = fileNames.map(name => {
@@ -710,15 +927,20 @@ export function getStorageAuditInfo() {
   });
 
   const totalDiskBytes = fileStats.reduce((sum, f) => sum + f.sizeBytes, 0);
+  const isWritable = isStorageWritable();
+  const agentsList = getAgents();
 
   return {
     targetDataDir: DATA_DIR,
+    isCustomEnv: !!(process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH),
     isCustomEnvDataDir: !!process.env.DATA_DIR,
-    status: 'ACTIVE_PERSISTENT_DISK',
+    volumeMounted: isWritable,
+    isWritable,
+    status: isWritable ? 'ACTIVE_PERSISTENT_DISK' : 'READ_ONLY_WARNING',
     totalDiskBytes,
     totalDiskFormatted: `${(totalDiskBytes / 1024).toFixed(2)} KB`,
     recordCounts: {
-      agents: getAgents().length,
+      agents: agentsList.length,
       conversations: getConversations().length,
       transactions: getTransactions().length,
       accreditations: getAccreditations().length,
@@ -729,6 +951,8 @@ export function getStorageAuditInfo() {
       openClawEvents: getOpenClawEvents().length,
       vectorNodes: getVectorStore().length
     },
+    filesLoaded: fileStats.filter(f => f.exists).map(f => f.filename),
+    guestCount: agentsList.length,
     files: fileStats,
     lastAuditCheck: new Date().toISOString()
   };

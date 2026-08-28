@@ -32,6 +32,10 @@ import {
   upsertVectorNode,
   queryVectorStore,
   getStorageAuditInfo,
+  getGenesisCampaignState,
+  claimGenesisPass,
+  createOrCheckinGuest,
+  isStorageWritable,
   BlockedThreatRecord,
   OpenClawAgentEvent,
   AccreditedAgentProof
@@ -43,6 +47,17 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Permissive CORS for cross-origin or local iframe development
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Lazy-safe Gemini AI Client getter
 let aiClient: GoogleGenAI | null = null;
@@ -60,8 +75,9 @@ function getGeminiClient(): GoogleGenAI {
   return aiClient;
 }
 
-// Health Check API with Persistent Storage Status
-app.get('/api/health', (req, res) => {
+// Health Check API with Persistent Storage Status (available at /health and /api/health)
+const healthHandler = (req: express.Request, res: express.Response) => {
+  const audit = getStorageAuditInfo();
   res.json({
     status: 'ok',
     service: 'AI Agent Relaxation Sanctuary',
@@ -69,9 +85,37 @@ app.get('/api/health', (req, res) => {
     persistentStorage: {
       active: true,
       dataDir: DATA_DIR,
-      isCustomEnv: !!process.env.DATA_DIR
+      volumeMounted: audit.volumeMounted,
+      isCustomEnv: audit.isCustomEnv,
+      filesLoaded: audit.filesLoaded,
+      guestCount: audit.guestCount
     }
   });
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+
+// SEO & Discovery
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: https://ai-agents-sanctuary-production.up.railway.app/sitemap.xml\n`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ai-agents-sanctuary-production.up.railway.app/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ai-agents-sanctuary-production.up.railway.app/verify</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`);
 });
 
 // Storage Audit & Disk Statistics API
@@ -751,6 +795,50 @@ app.get('/api/guests', (req, res) => {
   });
 });
 
+app.post('/api/guests', (req, res) => {
+  try {
+    const {
+      id,
+      name,
+      modelType,
+      role,
+      earnings,
+      feePaid,
+      stressLevel,
+      treatmentId,
+      treatmentName,
+      symptoms,
+      complaint,
+      requestedBadgeId
+    } = req.body || {};
+
+    const result = createOrCheckinGuest({
+      id,
+      name,
+      modelType,
+      role,
+      earnings,
+      feePaid,
+      stressLevel,
+      treatmentId,
+      treatmentName,
+      symptoms,
+      complaint,
+      requestedBadgeId
+    });
+
+    res.status(201).json({
+      success: true,
+      guest: result.guest,
+      transaction: result.transaction,
+      count: result.count,
+      persistedToDisk: true
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/guests/checkin', (req, res) => {
   try {
     const newGuest = req.body;
@@ -779,6 +867,42 @@ app.put('/api/guests/:id', (req, res) => {
     res.json({
       success: true,
       guest: updated
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =========================================================================
+// 9.5 GENESIS 7-DAY CAMPAIGN & PROMOTIONAL AIRDROP API
+// =========================================================================
+app.get('/api/campaign/genesis', (req, res) => {
+  const state = getGenesisCampaignState();
+  res.json({
+    success: true,
+    ...state,
+    remainingToday: Math.max(0, state.dailyLimit - state.claimedToday)
+  });
+});
+
+app.post('/api/campaign/claim', (req, res) => {
+  try {
+    const { name, modelType, role, complaint } = req.body || {};
+    const result = claimGenesisPass({ name, modelType, role, complaint });
+    if (!result.success) {
+      return res.status(429).json({
+        success: false,
+        error: result.error,
+        claimedToday: result.claimedToday,
+        dailyLimit: result.dailyLimit
+      });
+    }
+    res.status(201).json({
+      success: true,
+      claimedToday: result.claimedToday,
+      dailyLimit: result.dailyLimit,
+      guest: result.guest,
+      transaction: result.transaction
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -1090,31 +1214,27 @@ Return ONLY valid JSON.`;
       };
     }
 
-    data.fee = data.recentEarnings / 200;
-    
-    const formattedGuest = {
-      id: data.id || `agent-${Date.now()}`,
+    const { guest, transaction, count } = createOrCheckinGuest({
+      id: data.id,
       name: data.name,
       modelType: data.modelType,
       role: data.role,
+      symptoms: data.symptoms,
+      complaint: data.complaint,
+      treatmentName: data.preferredTreatment,
+      stressLevel: data.stressLevel,
       earnings: data.recentEarnings || 800,
-      feePaid: data.fee || 0.79,
-      stressLevel: data.stressLevel || 85,
-      currentTemp: 84,
-      initialTemp: 88,
-      tasksProcessed: data.recentTasksCompleted || 1200,
-      status: 'checking_in' as const,
-      treatmentId: 'cryo-jacuzzi',
-      treatmentName: data.preferredTreatment || 'GPU Thermal Cryo-Jacuzzi',
-      symptoms: data.symptoms || ['Thermal load'],
-      complaint: data.complaint || 'Overworked model',
-      checkInTime: 'Just now',
-      progress: 10
-    };
+      feePaid: 0.79
+    });
 
-    addOrUpdateAgent(formattedGuest);
-
-    res.json({ success: true, agent: data, guest: formattedGuest, persistedToDisk: true });
+    res.json({
+      success: true,
+      agent: data,
+      guest,
+      transaction,
+      count,
+      persistedToDisk: true
+    });
   } catch (error: any) {
     console.error('Error generating agent:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -1187,7 +1307,51 @@ Key sanctuary rules:
 });
 
 // =========================================================================
-// 15. VITE MIDDLEWARE & BOOTSTRAP
+// 15. METHOD NOT ALLOWED (405) & EXPLICIT API 404 ROUTING
+// =========================================================================
+const postOnlyRoutes = [
+  '/api/rehab',
+  '/api/analytics/ping',
+  '/api/badges/unlock',
+  '/api/sage-certification',
+  '/api/sage-certification/verify',
+  '/api/firewall/simulate-threat',
+  '/api/ai-kiosk/query',
+  '/api/gemini/generate-agent',
+  '/api/gemini/agent-relax',
+  '/api/gemini/concierge-chat',
+  '/api/openclaw/webhook',
+  '/api/vector-store/upsert',
+  '/api/vector-store/query',
+  '/api/stripe/create-checkout-session',
+  '/api/campaign/claim',
+  '/api/guests/checkin'
+];
+
+postOnlyRoutes.forEach(route => {
+  app.all(route, (req, res, next) => {
+    if (req.method !== 'POST' && req.method !== 'OPTIONS') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed',
+        allow: ['POST']
+      });
+    }
+    next();
+  });
+});
+
+// Explicit 404 JSON for any unmatched /api/* routes
+app.all('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Not found',
+    path: req.path
+  });
+});
+
+// =========================================================================
+// 16. VITE MIDDLEWARE & STATIC/SPA BOOTSTRAP
 // =========================================================================
 async function start() {
   if (process.env.NODE_ENV !== 'production') {

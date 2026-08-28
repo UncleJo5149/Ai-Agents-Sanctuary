@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ai-agents-sanctuary-production.up.railway.app/sitemap.xml
