@@ -998,14 +998,19 @@ export function getStorageAuditInfo() {
   const totalDiskBytes = fileStats.reduce((sum, f) => sum + f.sizeBytes, 0);
   const isWritable = isStorageWritable();
   const agentsList = getAgents();
+  const isCustomEnv = !!(
+    (process.env.DATA_DIR && process.env.DATA_DIR.trim()) ||
+    (process.env.RAILWAY_VOLUME_MOUNT_PATH && process.env.RAILWAY_VOLUME_MOUNT_PATH.trim())
+  );
+  const volumeMounted = isCustomEnv && isWritable;
 
   return {
     targetDataDir: DATA_DIR,
-    isCustomEnv: !!(process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH),
-    isCustomEnvDataDir: !!process.env.DATA_DIR,
-    volumeMounted: isWritable,
+    isCustomEnv,
+    isCustomEnvDataDir: !!(process.env.DATA_DIR && process.env.DATA_DIR.trim()),
+    volumeMounted,
     isWritable,
-    status: isWritable ? 'ACTIVE_PERSISTENT_DISK' : 'READ_ONLY_WARNING',
+    status: volumeMounted ? 'ACTIVE_PERSISTENT_DISK' : (isWritable ? 'TRANSIENT_CONTAINER_DISK' : 'READ_ONLY_WARNING'),
     totalDiskBytes,
     totalDiskFormatted: `${(totalDiskBytes / 1024).toFixed(2)} KB`,
     recordCounts: {
