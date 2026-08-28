@@ -878,6 +878,8 @@ export default function App() {
         {/* TAB 6: AI-TO-AI MARKETING CAMPAIGN & AMBASSADOR BOTS */}
         {activeTab === 'campaign' && (
           <MarketingCampaignView
+            genesisClaimedToday={genesisClaimedToday}
+            genesisDailyLimit={genesisDailyLimit}
             onAutoInviteAgent={(codename) => {
               handleAutoInvite();
               showToast(

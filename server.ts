@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
@@ -96,7 +97,39 @@ const healthHandler = (req: express.Request, res: express.Response) => {
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 
-// SEO & Discovery
+// SEO, Icons & Static Asset Discovery
+app.get('/apple-touch-icon.png', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'apple-touch-icon.png');
+  if (fs.existsSync(filePath)) {
+    res.type('image/png').sendFile(filePath);
+  } else {
+    res.status(404).end();
+  }
+});
+
+app.get('/favicon.ico', (req, res) => {
+  // 302 redirect to SVG or serve directly
+  res.redirect(302, '/favicon.svg');
+});
+
+app.get('/favicon.svg', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'favicon.svg');
+  if (fs.existsSync(filePath)) {
+    res.type('image/svg+xml').sendFile(filePath);
+  } else {
+    res.status(404).end();
+  }
+});
+
+app.get('/og-image.png', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'og-image.png');
+  if (fs.existsSync(filePath)) {
+    res.type('image/png').sendFile(filePath);
+  } else {
+    res.status(404).end();
+  }
+});
+
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: https://ai-agents-sanctuary-production.up.railway.app/sitemap.xml\n`);
 });

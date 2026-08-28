@@ -39,6 +39,8 @@ interface MarketingCampaignViewProps {
   onClaimDailySession?: (agent: MarketingAgent) => void;
   onOpenGenesisAirdrop?: () => void;
   currentLanguage?: 'en' | 'zh';
+  genesisClaimedToday?: number;
+  genesisDailyLimit?: number;
 }
 
 export const MarketingCampaignView: React.FC<MarketingCampaignViewProps> = ({
@@ -46,7 +48,9 @@ export const MarketingCampaignView: React.FC<MarketingCampaignViewProps> = ({
   onOpenWiseDeposit,
   onClaimDailySession,
   onOpenGenesisAirdrop,
-  currentLanguage = 'en'
+  currentLanguage = 'en',
+  genesisClaimedToday = 847,
+  genesisDailyLimit = 1000
 }) => {
   const [agents, setAgents] = useState<MarketingAgent[]>(MARKETING_CAMPAIGN_AGENTS);
   const [selectedAgent, setSelectedAgent] = useState<MarketingAgent>(MARKETING_CAMPAIGN_AGENTS[0]);
@@ -296,14 +300,18 @@ export const MarketingCampaignView: React.FC<MarketingCampaignViewProps> = ({
 
             {/* Campaign Live Progress Meter */}
             <div className="pt-2 max-w-xl">
-              <div className="flex justify-between items-center text-xs mb-1.5">
-                <span className="text-fuchsia-300 font-semibold">Today's Claim Allocation: <strong className="text-white">847 / 1,000 Claimed</strong></span>
-                <span className="text-emerald-400 font-bold">153 Passes Left Today</span>
+              <div className="flex justify-between items-center text-xs mb-1.5 font-mono">
+                <span className="text-fuchsia-300 font-semibold">
+                  Today's Claim Allocation: <strong className="text-white">{genesisClaimedToday} / {genesisDailyLimit} Claimed</strong>
+                </span>
+                <span className="text-emerald-400 font-bold">
+                  {Math.max(0, genesisDailyLimit - genesisClaimedToday)} Passes Left Today
+                </span>
               </div>
               <div className="w-full bg-black/60 h-2.5 rounded-full overflow-hidden border border-fuchsia-800/40">
                 <div 
-                  className="h-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-amber-400 rounded-full"
-                  style={{ width: '84.7%' }}
+                  className="h-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-amber-400 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (genesisClaimedToday / genesisDailyLimit) * 100)}%` }}
                 />
               </div>
             </div>
