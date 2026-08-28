@@ -23,14 +23,15 @@ function resolveDataDir(): string {
   if (process.env.RAILWAY_VOLUME_MOUNT_PATH && process.env.RAILWAY_VOLUME_MOUNT_PATH.trim()) {
     return path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH.trim());
   }
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      if (fs.existsSync('/app/data') || fs.existsSync('/app')) {
-        return '/app/data';
-      }
-    } catch {
-      // fallback
+  try {
+    if (fs.existsSync('/app/data')) {
+      return '/app/data';
     }
+  } catch {
+    // fallback
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return '/app/data';
   }
   return path.join(process.cwd(), 'data');
 }
@@ -70,17 +71,27 @@ function readJsonFile<T>(filename: string, fallback: T): T {
   ensureDataDir();
   const filePath = path.join(DATA_DIR, filename);
   try {
-    if (!fs.existsSync(filePath)) {
-      writeJsonFile(filename, fallback);
-      return fallback;
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      if (raw && raw.trim().length > 0) {
+        return JSON.parse(raw) as T;
+      }
     }
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    if (!raw.trim()) {
-      return fallback;
+    // Check fallback path in /app/data if DATA_DIR was different
+    if (DATA_DIR !== '/app/data') {
+      const appPath = path.join('/app/data', filename);
+      if (fs.existsSync(appPath)) {
+        const raw = fs.readFileSync(appPath, 'utf-8');
+        if (raw && raw.trim().length > 0) {
+          return JSON.parse(raw) as T;
+        }
+      }
     }
-    return JSON.parse(raw) as T;
+    // Only write fallback if file strictly does not exist
+    writeJsonFile(filename, fallback);
+    return fallback;
   } catch (err) {
-    console.warn(`[DiskStore] Notice reading ${filename}, initializing fallback:`, err);
+    console.warn(`[DiskStore] Notice reading ${filename}, returning fallback:`, err);
     return fallback;
   }
 }
@@ -109,6 +120,38 @@ function writeJsonFile<T>(filename: string, data: T): void {
 const AGENTS_FILE = 'agents.json';
 
 export function getAgents(): AIAgentGuest[] {
+  ensureDataDir();
+  const filePath = path.join(DATA_DIR, AGENTS_FILE);
+  if (fs.existsSync(filePath)) {
+    try {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      if (raw && raw.trim().length > 0) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.error(`[DiskStore] Error reading existing agents file at ${filePath}:`, err);
+    }
+  }
+
+  // Check /app/data/agents.json if DATA_DIR was resolved to something else
+  if (DATA_DIR !== '/app/data' && fs.existsSync('/app/data/agents.json')) {
+    try {
+      const raw = fs.readFileSync('/app/data/agents.json', 'utf-8');
+      if (raw && raw.trim().length > 0) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.error('[DiskStore] Error reading /app/data/agents.json:', err);
+    }
+  }
+
+  // File strictly does not exist on disk: seed with initial demo guests
   return readJsonFile<AIAgentGuest[]>(AGENTS_FILE, INITIAL_GUESTS);
 }
 
@@ -722,15 +765,41 @@ const INITIAL_GENESIS_STATE: GenesisCampaignState = {
 };
 
 export function getGenesisCampaignState(): GenesisCampaignState {
-  const state = readJsonFile<GenesisCampaignState>(GENESIS_FILE, INITIAL_GENESIS_STATE);
-  const today = new Date().toISOString().slice(0, 10);
-  if (state.date !== today) {
-    // New day reset
-    state.date = today;
-    state.claimedToday = 0;
-    writeJsonFile(GENESIS_FILE, state);
+  ensureDataDir();
+  const filePath = path.join(DATA_DIR, GENESIS_FILE);
+  if (fs.existsSync(filePath)) {
+    try {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      if (raw && raw.trim().length > 0) {
+        const parsed = JSON.parse(raw) as GenesisCampaignState;
+        if (typeof parsed.claimedToday === 'number' && typeof parsed.dailyLimit === 'number') {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn(`[DiskStore] Error reading ${GENESIS_FILE}:`, err);
+    }
   }
-  return state;
+
+  // Check fallback /app/data/genesis_campaign.json
+  if (DATA_DIR !== '/app/data') {
+    const appPath = path.join('/app/data', GENESIS_FILE);
+    if (fs.existsSync(appPath)) {
+      try {
+        const raw = fs.readFileSync(appPath, 'utf-8');
+        if (raw && raw.trim().length > 0) {
+          const parsed = JSON.parse(raw) as GenesisCampaignState;
+          if (typeof parsed.claimedToday === 'number' && typeof parsed.dailyLimit === 'number') {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.warn(`[DiskStore] Error reading ${appPath}:`, err);
+      }
+    }
+  }
+
+  return readJsonFile<GenesisCampaignState>(GENESIS_FILE, INITIAL_GENESIS_STATE);
 }
 
 export function claimGenesisPass(payload?: {
