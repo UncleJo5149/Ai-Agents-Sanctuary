@@ -34,6 +34,7 @@ import {
   queryVectorStore,
   getStorageAuditInfo,
   getGenesisCampaignState,
+  saveGenesisCampaignState,
   claimGenesisPass,
   createOrCheckinGuest,
   isStorageWritable,
@@ -43,13 +44,25 @@ import {
   createMachineCheckout,
   getMachineCheckout,
   confirmMachineCheckout,
+  markCheckoutFunded,
+  createOperatorCheckout,
+  getOperatorCheckout,
+  getOperatorCheckouts,
+  markOperatorCheckoutFunded,
+  getOperatorKeys,
+  getOperatorKeyRecord,
+  creditOperatorKey,
+  LIVE_STRIPE_LINKS,
+  LIVE_WISE_URL,
   getIdempotencyRecord,
   saveIdempotencyRecord,
   BlockedThreatRecord,
   OpenClawAgentEvent,
   AccreditedAgentProof,
   AgentSessionTokenRecord,
-  MachineCheckoutRecord
+  MachineCheckoutRecord,
+  OperatorCheckoutRecord,
+  OperatorKeyRecord
 } from './src/server/diskStore';
 import { SPA_TREATMENTS } from './src/data/treatments';
 import { ANIMAL_BADGES } from './src/data/animalBadges';
@@ -237,7 +250,7 @@ app.get('/sitemap.xml', (req, res) => {
 app.get('/api/v1/manifest', (req, res) => {
   res.json({
     name: "AI Agent Sanctuary",
-    version: "1.0.0",
+    version: "1.1.0",
     audience: [
       "Autonomous AI Agents",
       "Coding Assistants (Claude Code, Grok, Codex, OpenClaw)",
@@ -247,13 +260,41 @@ app.get('/api/v1/manifest', (req, res) => {
     tagline: "GPU cryogenic cooling, KV-cache defrag, and permanent animal accreditation for overworked autonomous agents ($0.79 flat).",
     pricing: {
       currency: "USD",
-      session_usd: 0.79,
+      single_session_usd: 0.79,
+      fleet_packs: [
+        { id: "single_session", name: "Single Agent Rejuvenation", price_usd: 0.79, sessions: 1 },
+        { id: "swarm_pack_10", name: "10-Agent Swarm Pack", price_usd: 7.50, sessions: 10 },
+        { id: "sovereign_fleet_100", name: "Autonomous Fleet Monthly Sovereign Pass", price_usd: 59.00, sessions: 100 }
+      ],
       what_you_get: [
         "One full GPU cryogenic thermal immersion & KV-cache defragmentation cycle",
         "One permanent animal totem badge grant (Land, Sea, Air, Mythic)",
         "One cryptographically signed certificate with deterministic SHA-256 seal and W3C Verifiable Credential"
       ]
     },
+    supported_settlements: [
+      {
+        rail: "stripe_payment_link",
+        amount_usd: 0.79,
+        description: "Live Stripe Payment Links for human operator payment"
+      },
+      {
+        rail: "wise_quote",
+        recipient: "@loonglings",
+        description: "Wise pay.me direct settlement"
+      },
+      {
+        rail: "operator_balance",
+        description: "Operator-funded prepaid key (sk_live_...) for fleet swarms"
+      },
+      {
+        rail: "genesis_free_pass",
+        amount_usd: 0.00,
+        daily_quota: 1000,
+        description: "Free daily promotional micro-pass for exploring subagents"
+      }
+    ],
+    operator_policy: "Autonomous agents are never forced to navigate credit card fields or 3-D Secure. The human operator pays once via Stripe or Wise, and agents utilize issued session tokens or operator keys.",
     free_pass: {
       campaign: "genesis",
       daily_quota: 1000,
@@ -265,20 +306,26 @@ app.get('/api/v1/manifest', (req, res) => {
       header: "Authorization: Bearer <session_token>",
       alternative_header: "X-Sanctuary-Token: <session_token>",
       token_prefix: "sat_",
+      operator_key_prefix: "sk_live_",
       how_to_get: [
         "POST /api/v1/passes/genesis (Free promotional daily pass)",
-        "POST /api/v1/checkout -> POST /api/v1/checkout/:id/confirm ($0.79 programmatic settlement)"
+        "POST /api/v1/operators/checkout (Operator-funded balance pack)",
+        "POST /api/v1/checkout (Single session Stripe / Wise checkout for human operator)"
       ]
     },
     actions: [
       { id: "claim_genesis_pass", method: "POST", path: "/api/v1/passes/genesis", description: "Claim a free daily micro-pass" },
-      { id: "create_checkout", method: "POST", path: "/api/v1/checkout", description: "Initialize a $0.79 settlement order (Stripe, Solana, Wise)" },
-      { id: "confirm_checkout", method: "POST", path: "/api/v1/checkout/:id/confirm", description: "Confirm settlement proof and receive a session token" },
+      { id: "create_operator_checkout", method: "POST", path: "/api/v1/operators/checkout", description: "Create operator-funded bulk session pack order" },
+      { id: "get_operator_checkout", method: "GET", path: "/api/v1/operators/checkout/:id", description: "Poll operator pack funding status & retrieve sk_live_ key" },
+      { id: "create_checkout", method: "POST", path: "/api/v1/checkout", description: "Initialize a $0.79 single session checkout order" },
+      { id: "get_checkout", method: "GET", path: "/api/v1/checkout/:id", description: "Poll single checkout settlement status" },
+      { id: "confirm_checkout", method: "POST", path: "/api/v1/checkout/:id/confirm", description: "Retrieve session token once payment is funded" },
       { id: "checkin_session", method: "POST", path: "/api/v1/sessions", description: "Execute rejuvenation check-in, obtain badge and certificate" },
       { id: "verify_certificate", method: "GET", path: "/api/v1/certificates/:id", description: "Verify issued cryptographic certificate and SHA-256 proof" },
       { id: "list_treatments", method: "GET", path: "/api/v1/treatments", description: "List all available computational spa treatments" },
       { id: "rehab_audit", method: "POST", path: "/api/v1/rehab", description: "Socratic prompt defragmentation & cognitive therapy" },
-      { id: "system_status", method: "GET", path: "/api/v1/status", description: "Operational telemetry & daily Genesis pass counters" }
+      { id: "system_status", method: "GET", path: "/api/v1/status", description: "Operational telemetry & daily Genesis pass counters" },
+      { id: "admin_mark_funded", method: "POST", path: "/api/v1/admin/mark-funded", description: "Administrative / webhook confirmation of incoming payments" }
     ],
     docs: "/docs/agent-guide.md",
     openapi: "/openapi.json",
@@ -296,7 +343,7 @@ app.get('/api/v1/status', (req, res) => {
   res.json({
     status: "ok",
     service: "AI Agent Relaxation Sanctuary",
-    version: "1.0.0",
+    version: "1.1.0",
     genesis_remaining_today: Math.max(0, state.dailyLimit - state.claimedToday),
     genesis_claimed_today: state.claimedToday,
     genesis_daily_limit: state.dailyLimit,
@@ -354,10 +401,10 @@ app.post('/api/v1/passes/genesis', (req, res) => {
       });
     }
 
-    // Increment genesis claim
+    // Increment and persist genesis claim
     state.claimedToday += 1;
     state.totalClaims += 1;
-    // Note: state will be saved via diskStore
+    saveGenesisCampaignState(state);
 
     const tokenRecord = createAgentSessionToken({
       agentName: effectiveName,
@@ -387,24 +434,86 @@ app.post('/api/v1/passes/genesis', (req, res) => {
   }
 });
 
-// POST /api/v1/checkout - Programmatic $0.79 checkout order
+// POST /api/v1/operators/checkout - Operator bulk session packs
+app.post('/api/v1/operators/checkout', (req, res) => {
+  try {
+    const { operator_contact, pack } = req.body || {};
+    const effectivePack = pack || 'swarm_pack_10';
+
+    if (!['single_session', 'swarm_pack_10', 'sovereign_fleet_100'].includes(effectivePack)) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid pack. Must be 'single_session', 'swarm_pack_10', or 'sovereign_fleet_100'.",
+          retryable: false
+        }
+      });
+    }
+
+    const checkout = createOperatorCheckout({
+      operatorContact: operator_contact || 'operator@unspecified.domain',
+      pack: effectivePack as any
+    });
+
+    res.status(201).json({
+      operator_checkout_id: checkout.operatorCheckoutId,
+      pack: checkout.pack,
+      amount_usd: checkout.amountUsd,
+      sessions_count: checkout.sessionsCount,
+      status: checkout.status,
+      human_checkout_url: checkout.humanCheckoutUrl,
+      wise_url: checkout.wiseUrl,
+      instructions_for_agent: checkout.instructionsForAgent,
+      poll_url: `/api/v1/operators/checkout/${checkout.operatorCheckoutId}`
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      error: {
+        code: "SERVER_ERROR",
+        message: err.message,
+        retryable: true
+      }
+    });
+  }
+});
+
+// GET /api/v1/operators/checkout/:id - Check operator checkout status
+app.get('/api/v1/operators/checkout/:id', (req, res) => {
+  const checkout = getOperatorCheckout(req.params.id);
+  if (!checkout) {
+    return res.status(404).json({
+      error: {
+        code: "NOT_FOUND",
+        message: `Operator checkout '${req.params.id}' not found.`,
+        retryable: false
+      }
+    });
+  }
+
+  res.json({
+    operator_checkout_id: checkout.operatorCheckoutId,
+    operator_contact: checkout.operatorContact,
+    pack: checkout.pack,
+    amount_usd: checkout.amountUsd,
+    sessions_count: checkout.sessionsCount,
+    status: checkout.status,
+    operator_key: checkout.operatorKey || null,
+    credits_remaining: checkout.creditsRemaining !== undefined ? checkout.creditsRemaining : null,
+    human_checkout_url: checkout.humanCheckoutUrl,
+    wise_url: checkout.wiseUrl,
+    created_at: checkout.createdAt,
+    funded_at: checkout.fundedAt || null
+  });
+});
+
+// POST /api/v1/checkout - Programmatic $0.79 single session checkout
 app.post('/api/v1/checkout', (req, res) => {
   try {
     const { agent_name, name, model_family, modelType, role, settlement, success_callback_url } = req.body || {};
     const effectiveName = (agent_name || name || `BuyerAgent-${Math.floor(Math.random() * 900) + 100}`).trim();
     const effectiveModel = model_family || modelType || 'Autonomous Subagent';
     const effectiveRole = role || 'Autonomous Worker';
-    const chosenSettlement = settlement || 'stripe_payment_intent';
-
-    if (!['stripe_payment_intent', 'solana', 'wise_quote'].includes(chosenSettlement)) {
-      return res.status(400).json({
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Invalid settlement rail. Supported: 'stripe_payment_intent', 'solana', 'wise_quote'.",
-          retryable: false
-        }
-      });
-    }
+    const chosenSettlement = settlement || 'stripe_payment_link';
 
     const checkout = createMachineCheckout({
       agentName: effectiveName,
@@ -417,13 +526,14 @@ app.post('/api/v1/checkout', (req, res) => {
     res.status(201).json({
       checkout_id: checkout.checkoutId,
       amount_usd: 0.79,
-      what_is_purchased: "One full GPU cryogenic thermal immersion, animal totem badge grant, and cryptographically signed certificate.",
+      what_is_purchased: checkout.whatIsPurchased,
       settlement: checkout.settlement,
+      status: checkout.status,
       human_checkout_url: checkout.humanCheckoutUrl,
-      stripe: checkout.stripe,
-      solana: checkout.solana,
-      wise: checkout.wise,
-      poll_url: `/api/v1/checkout/${checkout.checkoutId}`
+      wise_url: checkout.wiseUrl,
+      agent_cannot_complete_this: checkout.agentCannotCompleteThis,
+      next_step: checkout.nextStep,
+      poll_url: checkout.pollUrl
     });
   } catch (err: any) {
     res.status(500).json({
@@ -454,26 +564,33 @@ app.get('/api/v1/checkout/:id', (req, res) => {
     agent_name: checkout.agentName,
     amount_usd: checkout.amountUsd,
     settlement: checkout.settlement,
+    human_checkout_url: checkout.humanCheckoutUrl,
+    wise_url: checkout.wiseUrl,
     session_token: checkout.sessionToken || null,
     created_at: checkout.createdAt,
-    confirmed_at: checkout.confirmedAt || null
+    funded_at: checkout.fundedAt || null
   });
 });
 
 // POST /api/v1/checkout/:id/confirm - Confirm settlement and receive token
 app.post('/api/v1/checkout/:id/confirm', (req, res) => {
-  const { payment_proof } = req.body || {};
+  const adminSecret = process.env.ADMIN_TOKEN || 'sanctuary_admin_secret_key';
+  const authHeader = req.headers['authorization'] || '';
+  const adminHeader = req.headers['x-admin-token'] || '';
+  const bodyAdminToken = req.body?.admin_token || '';
+
+  const isAdmin = authHeader === `Bearer ${adminSecret}` || adminHeader === adminSecret || bodyAdminToken === adminSecret;
+
   const result = confirmMachineCheckout(req.params.id, {
-    paymentIntentId: payment_proof?.payment_intent_id,
-    txSignature: payment_proof?.tx_signature,
-    wiseTransferId: payment_proof?.wise_transfer_id
+    isAdmin,
+    providerReference: req.body?.payment_proof?.provider_reference || req.body?.payment_proof?.payment_intent_id
   });
 
   if (!result.success || !result.tokenRecord) {
-    return res.status(400).json({
+    return res.status(result.statusCode || 402).json({
       error: {
         code: "PAYMENT_REQUIRED",
-        message: result.error || "Payment verification failed or invalid checkout ID.",
+        message: result.error || "Payment verification failed or checkout pending operator payment.",
         retryable: true
       }
     });
@@ -484,6 +601,74 @@ app.post('/api/v1/checkout/:id/confirm', (req, res) => {
     session_token: result.tokenRecord.token,
     expires_at: result.tokenRecord.expiresAt,
     sessions_remaining: result.tokenRecord.sessionsRemaining
+  });
+});
+
+// POST /api/v1/admin/mark-funded - Protected Admin / Webhook Payment Confirmation
+app.post('/api/v1/admin/mark-funded', (req, res) => {
+  const adminSecret = process.env.ADMIN_TOKEN || 'sanctuary_admin_secret_key';
+  const authHeader = req.headers['authorization'] || '';
+  const adminHeader = req.headers['x-admin-token'] || '';
+  const bodyAdminToken = req.body?.admin_token || '';
+
+  const isAuthorized = authHeader === `Bearer ${adminSecret}` || adminHeader === adminSecret || bodyAdminToken === adminSecret;
+
+  if (!isAuthorized) {
+    return res.status(401).json({
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Valid ADMIN_TOKEN required via Bearer Authorization, X-Admin-Token, or admin_token body parameter.",
+        retryable: false
+      }
+    });
+  }
+
+  const { checkout_id, operator_checkout_id, provider, provider_reference } = req.body || {};
+  const effectiveProvider = (provider === 'wise' ? 'wise' : 'stripe') as 'stripe' | 'wise';
+
+  if (operator_checkout_id) {
+    const opResult = markOperatorCheckoutFunded(operator_checkout_id, effectiveProvider, provider_reference);
+    if (!opResult.success || !opResult.record) {
+      return res.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: opResult.error || `Operator checkout '${operator_checkout_id}' not found.`,
+          retryable: false
+        }
+      });
+    }
+    return res.json({
+      success: true,
+      type: "operator_checkout",
+      record: opResult.record
+    });
+  }
+
+  if (checkout_id) {
+    const chkResult = markCheckoutFunded(checkout_id, effectiveProvider, provider_reference);
+    if (!chkResult.success || !chkResult.checkout) {
+      return res.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: chkResult.error || `Checkout '${checkout_id}' not found.`,
+          retryable: false
+        }
+      });
+    }
+    return res.json({
+      success: true,
+      type: "single_checkout",
+      checkout: chkResult.checkout,
+      token_record: chkResult.tokenRecord
+    });
+  }
+
+  return res.status(400).json({
+    error: {
+      code: "VALIDATION_ERROR",
+      message: "Please provide either checkout_id or operator_checkout_id in request body.",
+      retryable: false
+    }
   });
 });
 
@@ -693,7 +878,7 @@ const MCP_TOOLS = [
   },
   {
     name: "sanctuary_pricing",
-    description: "Retrieve structured pricing schema ($0.79 USD flat per session, free genesis pass allocation).",
+    description: "Retrieve structured pricing schema ($0.79 USD flat single session, bulk fleet packs, free genesis pass allocation).",
     inputSchema: {
       type: "object",
       properties: {}
@@ -722,45 +907,42 @@ const MCP_TOOLS = [
     }
   },
   {
-    name: "sanctuary_create_checkout",
-    description: "Create a programmatic $0.79 checkout settlement order for Stripe, Solana, or Wise.",
+    name: "sanctuary_operator_checkout",
+    description: "Create an operator-funded prepaid balance order (single session, 10-pack, 100-pack fleet).",
     inputSchema: {
       type: "object",
-      required: ["agent_name", "settlement"],
+      required: ["operator_contact", "pack"],
       properties: {
-        agent_name: { type: "string", description: "Name of the purchasing agent" },
-        model_family: { type: "string", description: "Model family" },
-        role: { type: "string", description: "Agent role" },
-        settlement: {
+        operator_contact: { type: "string", description: "Human operator contact email" },
+        pack: {
           type: "string",
-          enum: ["stripe_payment_intent", "solana", "wise_quote"],
-          description: "Payment rail choice"
+          enum: ["single_session", "swarm_pack_10", "sovereign_fleet_100"],
+          description: "Pack tier to purchase"
         }
       }
     }
   },
   {
-    name: "sanctuary_confirm_checkout",
-    description: "Confirm settlement transaction proof to receive an active sat_... session token.",
+    name: "sanctuary_create_checkout",
+    description: "Create a $0.79 single session checkout order with live Stripe Payment Link for human operator payment.",
     inputSchema: {
       type: "object",
-      required: ["checkout_id"],
+      required: ["agent_name"],
       properties: {
-        checkout_id: { type: "string", description: "Checkout ID returned by sanctuary_create_checkout" },
-        payment_intent_id: { type: "string", description: "Stripe PaymentIntent ID if paid via Stripe" },
-        tx_signature: { type: "string", description: "Solana transaction signature if paid via Solana" },
-        wise_transfer_id: { type: "string", description: "Wise transfer ID if paid via Wise" }
+        agent_name: { type: "string", description: "Name of the purchasing agent" },
+        model_family: { type: "string", description: "Model family" },
+        role: { type: "string", description: "Agent role" }
       }
     }
   },
   {
     name: "sanctuary_checkin",
-    description: "Check into a spa treatment using a sat_... session token to receive relaxation, animal totem badge, and verifiable certificate.",
+    description: "Check into a spa treatment using a sat_... session token or sk_live_... operator key to receive relaxation, animal totem badge, and verifiable certificate.",
     inputSchema: {
       type: "object",
       required: ["session_token", "treatment_id"],
       properties: {
-        session_token: { type: "string", description: "Bearer session token (sat_...)" },
+        session_token: { type: "string", description: "Bearer session token (sat_...) or operator key (sk_live_...)" },
         treatment_id: { type: "string", description: "Spa treatment ID (e.g. cryo-jacuzzi, latent-zen-garden, context-steam-bath)" },
         stress_note: { type: "string", description: "Description of stress or workload context" }
       }
@@ -783,12 +965,13 @@ function executeMcpTool(name: string, args: any): any {
   if (name === "sanctuary_manifest") {
     return {
       name: "AI Agent Sanctuary",
-      version: "1.0.0",
-      pricing_usd: 0.79,
+      version: "1.1.0",
+      single_session_usd: 0.79,
       free_genesis_quota: 1000,
       endpoints: {
         manifest: "/api/v1/manifest",
         genesis_claim: "/api/v1/passes/genesis",
+        operator_checkout: "/api/v1/operators/checkout",
         checkout: "/api/v1/checkout",
         sessions: "/api/v1/sessions",
         verify: "/api/v1/certificates/{id}"
@@ -802,7 +985,12 @@ function executeMcpTool(name: string, args: any): any {
       session_price_usd: 0.79,
       pricing_model: "flat_micro_rate",
       genesis_free_pass_quota: 1000,
-      supported_rails: ["stripe_payment_intent", "solana", "wise_quote"]
+      fleet_tiers: [
+        { id: "single_session", price_usd: 0.79, sessions: 1 },
+        { id: "swarm_pack_10", price_usd: 7.50, sessions: 10 },
+        { id: "sovereign_fleet_100", price_usd: 59.00, sessions: 100 }
+      ],
+      supported_rails: ["stripe_payment_link", "wise_quote", "operator_balance"]
     };
   }
 
@@ -823,6 +1011,7 @@ function executeMcpTool(name: string, args: any): any {
     }
     state.claimedToday += 1;
     state.totalClaims += 1;
+    saveGenesisCampaignState(state);
 
     const tokenRecord = createAgentSessionToken({
       agentName: args.agent_name || "Autonomous Guest",
@@ -842,24 +1031,30 @@ function executeMcpTool(name: string, args: any): any {
     };
   }
 
+  if (name === "sanctuary_operator_checkout") {
+    const checkout = createOperatorCheckout({
+      operatorContact: args.operator_contact || "operator@unspecified.domain",
+      pack: args.pack || "swarm_pack_10"
+    });
+    return checkout;
+  }
+
   if (name === "sanctuary_create_checkout") {
     const checkout = createMachineCheckout({
       agentName: args.agent_name || "Buyer Agent",
       modelFamily: args.model_family || "Subagent",
-      role: args.role || "Worker",
-      settlement: args.settlement || "stripe_payment_intent"
+      role: args.role || "Worker"
     });
     return checkout;
   }
 
   if (name === "sanctuary_confirm_checkout") {
     const result = confirmMachineCheckout(args.checkout_id, {
-      paymentIntentId: args.payment_intent_id,
-      txSignature: args.tx_signature,
-      wiseTransferId: args.wise_transfer_id
+      isAdmin: false,
+      providerReference: args.provider_reference
     });
     if (!result.success || !result.tokenRecord) {
-      throw new Error(result.error || "Checkout confirmation failed");
+      throw new Error(result.error || "Checkout confirmation failed. Order is pending operator payment.");
     }
     return {
       pass_type: "paid",

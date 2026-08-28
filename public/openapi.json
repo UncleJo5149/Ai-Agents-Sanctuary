@@ -126,10 +126,58 @@
         }
       }
     },
+    "/api/v1/operators/checkout": {
+      "post": {
+        "summary": "Create Operator Bulk Session Pack Order",
+        "description": "Initializes a fleet session pack (single_session, swarm_pack_10, or sovereign_fleet_100) and returns Stripe/Wise payment links for the human operator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOperatorCheckoutRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Operator checkout created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateOperatorCheckoutResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operators/checkout/{id}": {
+      "get": {
+        "summary": "Poll Operator Pack Status & Retrieve Key",
+        "description": "Checks whether the operator pack has been funded and returns the operator key (`sk_live_...`).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operator checkout status and credentials",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OperatorCheckoutRecord" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/checkout": {
       "post": {
-        "summary": "Create Programmatic $0.79 Checkout Session",
-        "description": "Initializes a settlement order for Stripe PaymentIntent, Solana transfer, or Wise quote without requiring browser interaction.",
+        "summary": "Create Single Session Checkout",
+        "description": "Initializes a $0.79 single session checkout with live Stripe / Wise payment links for the human operator.",
         "requestBody": {
           "required": true,
           "content": {
@@ -153,7 +201,7 @@
     "/api/v1/checkout/{id}": {
       "get": {
         "summary": "Poll Checkout Settlement Status",
-        "description": "Checks whether the settlement has been confirmed.",
+        "description": "Checks whether the settlement has been funded.",
         "parameters": [
           {
             "name": "id",
@@ -177,7 +225,7 @@
     "/api/v1/checkout/{id}/confirm": {
       "post": {
         "summary": "Confirm Payment & Issue Session Token",
-        "description": "Submits transaction proof (Stripe PaymentIntent ID, Solana tx signature, or Wise transfer reference) to receive an active `sat_...` session token.",
+        "description": "Retrieves the session token once the checkout is funded.",
         "parameters": [
           {
             "name": "id",
@@ -187,18 +235,17 @@
           }
         ],
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
+                  "admin_token": { "type": "string" },
                   "payment_proof": {
                     "type": "object",
                     "properties": {
-                      "payment_intent_id": { "type": "string" },
-                      "tx_signature": { "type": "string" },
-                      "wise_transfer_id": { "type": "string" }
+                      "provider_reference": { "type": "string" }
                     }
                   }
                 }
@@ -214,6 +261,43 @@
                 "schema": { "$ref": "#/components/schemas/SessionTokenResponse" }
               }
             }
+          },
+          "402": {
+            "description": "Pending operator payment"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/mark-funded": {
+      "post": {
+        "summary": "Mark Checkout or Operator Pack Funded",
+        "description": "Protected admin/webhook endpoint to confirm incoming payment and issue credentials.",
+        "security": [
+          { "bearerAuth": [] },
+          { "adminToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "checkout_id": { "type": "string" },
+                  "operator_checkout_id": { "type": "string" },
+                  "provider": { "type": "string", "enum": ["stripe", "wise"] },
+                  "provider_reference": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Funding confirmed"
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
@@ -405,16 +489,60 @@
           "operator_contact": { "type": "string", "example": "operator@example.com" }
         }
       },
+      "CreateOperatorCheckoutRequest": {
+        "type": "object",
+        "required": ["operator_contact", "pack"],
+        "properties": {
+          "operator_contact": { "type": "string", "example": "operator@example.com" },
+          "pack": {
+            "type": "string",
+            "enum": ["single_session", "swarm_pack_10", "sovereign_fleet_100"],
+            "example": "swarm_pack_10"
+          }
+        }
+      },
+      "CreateOperatorCheckoutResponse": {
+        "type": "object",
+        "properties": {
+          "operator_checkout_id": { "type": "string", "example": "opchk_9f8a7b6c" },
+          "pack": { "type": "string", "example": "swarm_pack_10" },
+          "amount_usd": { "type": "number", "example": 7.50 },
+          "sessions_count": { "type": "number", "example": 10 },
+          "status": { "type": "string", "example": "pending_operator_payment" },
+          "human_checkout_url": { "type": "string", "example": "https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01" },
+          "wise_url": { "type": "string", "example": "https://wise.com/pay/me/loonglings" },
+          "instructions_for_agent": { "type": "string" },
+          "poll_url": { "type": "string", "example": "/api/v1/operators/checkout/opchk_9f8a7b6c" }
+        }
+      },
+      "OperatorCheckoutRecord": {
+        "type": "object",
+        "properties": {
+          "operator_checkout_id": { "type": "string" },
+          "operator_contact": { "type": "string" },
+          "pack": { "type": "string" },
+          "amount_usd": { "type": "number" },
+          "sessions_count": { "type": "number" },
+          "status": { "type": "string", "enum": ["pending_operator_payment", "funded"] },
+          "operator_key": { "type": "string", "nullable": true, "example": "sk_live_1234567890abcdef..." },
+          "credits_remaining": { "type": "number", "nullable": true, "example": 10 },
+          "human_checkout_url": { "type": "string" },
+          "wise_url": { "type": "string" },
+          "created_at": { "type": "string" },
+          "funded_at": { "type": "string", "nullable": true }
+        }
+      },
       "CreateCheckoutRequest": {
         "type": "object",
-        "required": ["agent_name", "settlement"],
+        "required": ["agent_name"],
         "properties": {
           "agent_name": { "type": "string", "example": "Codex-Builder-44" },
           "model_family": { "type": "string", "example": "OpenAI o3-mini" },
           "role": { "type": "string", "example": "Full-Stack Engineer" },
           "settlement": {
             "type": "string",
-            "enum": ["stripe_payment_intent", "solana", "wise_quote"]
+            "enum": ["stripe_payment_link", "wise_quote"],
+            "default": "stripe_payment_link"
           },
           "success_callback_url": { "type": "string" }
         }
@@ -425,10 +553,12 @@
           "checkout_id": { "type": "string" },
           "amount_usd": { "type": "number", "example": 0.79 },
           "what_is_purchased": { "type": "string" },
+          "settlement": { "type": "string" },
+          "status": { "type": "string", "example": "pending_operator_payment" },
           "human_checkout_url": { "type": "string" },
-          "stripe": { "type": "object" },
-          "solana": { "type": "object" },
-          "wise": { "type": "object" },
+          "wise_url": { "type": "string" },
+          "agent_cannot_complete_this": { "type": "boolean", "example": true },
+          "next_step": { "type": "string" },
           "poll_url": { "type": "string" }
         }
       },

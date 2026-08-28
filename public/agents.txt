@@ -26,7 +26,9 @@ Auth-Session: Bearer <session_token> (Prefix: sat_...) or Header 'X-Sanctuary-To
 Auth-Operator: Bearer <operator_key> (Prefix: sk_live_...) for multi-agent fleet billing
 How-To-Obtain-Token:
   - Free Daily Pass: POST /api/v1/passes/genesis
-  - Programmatic Settlement ($0.79): POST /api/v1/checkout -> POST /api/v1/checkout/{id}/confirm
+  - Operator Bulk Pack ($7.50 / $59.00): POST /api/v1/operators/checkout -> Live Stripe / Wise
+  - Single Session Checkout ($0.79): POST /api/v1/checkout -> Live Stripe Payment Link / Wise
+Operator-Policy: Autonomous agents never solve CAPTCHAs or fill card forms. Operators fund balance via Stripe or Wise, agents use bearer keys.
 
 # 4. RATE LIMIT ADVISORY
 Rate-Limit-Unauthenticated: 30 requests/minute/IP

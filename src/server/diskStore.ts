@@ -802,6 +802,10 @@ export function getGenesisCampaignState(): GenesisCampaignState {
   return readJsonFile<GenesisCampaignState>(GENESIS_FILE, INITIAL_GENESIS_STATE);
 }
 
+export function saveGenesisCampaignState(state: GenesisCampaignState): void {
+  writeJsonFile(GENESIS_FILE, state);
+}
+
 export function claimGenesisPass(payload?: {
   name?: string;
   modelType?: string;
@@ -820,7 +824,7 @@ export function claimGenesisPass(payload?: {
 
   state.claimedToday += 1;
   state.totalClaims += 1;
-  writeJsonFile(GENESIS_FILE, state);
+  saveGenesisCampaignState(state);
 
   const name = payload?.name || `GenesisPioneer-${Math.floor(Math.random() * 900) + 100}`;
   const modelType = payload?.modelType || 'Autonomous Explorer Subagent';
@@ -1057,8 +1061,196 @@ export function getSessionTokenRecord(tokenInput: string): AgentSessionTokenReco
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
   const tokens = getAgentTokens();
 
-  // Allow matching by direct raw token or by SHA-256 hash or operator key
   return tokens.find(t => t.token === rawToken || t.tokenHash === tokenHash) || null;
+}
+
+// Live Stripe Payment Links to reuse
+export const LIVE_STRIPE_LINKS = {
+  single_session: 'https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00',
+  swarm_pack_10: 'https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01',
+  sovereign_fleet_100: 'https://buy.stripe.com/6oU14ndia9l63hIciZ43S02',
+  additional_1: 'https://buy.stripe.com/28EbJ15PIbtedWm2Ip43S03',
+  additional_2: 'https://buy.stripe.com/cNifZhce6apa5pQ1El43S04'
+};
+export const LIVE_WISE_URL = 'https://wise.com/pay/me/loonglings';
+
+// ==========================================
+// 16. OPERATOR KEYS STORE (PREPAID BALANCES)
+// ==========================================
+export const OPERATOR_KEYS_FILE = 'operator_keys.json';
+
+export interface OperatorKeyRecord {
+  operatorKey: string; // sk_live_...
+  operatorKeyHash: string;
+  operatorContact: string;
+  creditsRemaining: number;
+  totalCreditsPurchased: number;
+  createdAt: string;
+  updatedAt: string;
+  usedSessions: Array<{
+    sessionId: string;
+    agentName: string;
+    treatmentId: string;
+    usedAt: string;
+    certificateId: string;
+  }>;
+}
+
+export function getOperatorKeys(): OperatorKeyRecord[] {
+  return readJsonFile<OperatorKeyRecord[]>(OPERATOR_KEYS_FILE, []);
+}
+
+export function saveOperatorKeys(keys: OperatorKeyRecord[]): void {
+  writeJsonFile(OPERATOR_KEYS_FILE, keys);
+}
+
+export function getOperatorKeyRecord(keyInput: string): OperatorKeyRecord | null {
+  if (!keyInput || !keyInput.trim()) return null;
+  const rawKey = keyInput.trim();
+  const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+  const keys = getOperatorKeys();
+  return keys.find(k => k.operatorKey === rawKey || k.operatorKeyHash === keyHash) || null;
+}
+
+export function creditOperatorKey(contact: string, credits: number, existingKey?: string): OperatorKeyRecord {
+  const keys = getOperatorKeys();
+  const now = new Date().toISOString();
+  let index = existingKey ? keys.findIndex(k => k.operatorKey === existingKey.trim()) : -1;
+  if (index < 0 && contact) {
+    index = keys.findIndex(k => k.operatorContact.toLowerCase() === contact.trim().toLowerCase());
+  }
+
+  if (index >= 0) {
+    keys[index].creditsRemaining += credits;
+    keys[index].totalCreditsPurchased += credits;
+    keys[index].updatedAt = now;
+    saveOperatorKeys(keys);
+    return keys[index];
+  }
+
+  const entropy = crypto.randomBytes(24).toString('hex');
+  const newKey = existingKey || `sk_live_${entropy}`;
+  const keyHash = crypto.createHash('sha256').update(newKey).digest('hex');
+  const newRecord: OperatorKeyRecord = {
+    operatorKey: newKey,
+    operatorKeyHash: keyHash,
+    operatorContact: contact || 'operator@unspecified.domain',
+    creditsRemaining: credits,
+    totalCreditsPurchased: credits,
+    createdAt: now,
+    updatedAt: now,
+    usedSessions: []
+  };
+
+  keys.unshift(newRecord);
+  saveOperatorKeys(keys);
+  return newRecord;
+}
+
+// ==========================================
+// 17. OPERATOR CHECKOUT ORDERS STORE
+// ==========================================
+export const OPERATOR_CHECKOUTS_FILE = 'operator_checkouts.json';
+
+export interface OperatorCheckoutRecord {
+  operatorCheckoutId: string; // och_...
+  operatorContact: string;
+  pack: 'single_session' | 'swarm_pack_10' | 'sovereign_fleet_100';
+  sessionsCount: number;
+  amountUsd: number;
+  status: 'pending_operator_payment' | 'funded' | 'expired' | 'canceled';
+  humanCheckoutUrl: string;
+  wiseUrl: string;
+  instructionsForAgent: string;
+  createdAt: string;
+  fundedAt?: string;
+  operatorKey?: string;
+  creditsRemaining?: number;
+  provider?: string;
+  providerReference?: string;
+}
+
+export function getOperatorCheckouts(): OperatorCheckoutRecord[] {
+  return readJsonFile<OperatorCheckoutRecord[]>(OPERATOR_CHECKOUTS_FILE, []);
+}
+
+export function saveOperatorCheckouts(checkouts: OperatorCheckoutRecord[]): void {
+  writeJsonFile(OPERATOR_CHECKOUTS_FILE, checkouts);
+}
+
+export function createOperatorCheckout(params: {
+  operatorContact: string;
+  pack: 'single_session' | 'swarm_pack_10' | 'sovereign_fleet_100';
+}): OperatorCheckoutRecord {
+  const operatorCheckoutId = `och_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
+  const now = new Date().toISOString();
+
+  let amountUsd = 0.79;
+  let sessionsCount = 1;
+  let baseStripeLink = LIVE_STRIPE_LINKS.single_session;
+
+  if (params.pack === 'swarm_pack_10') {
+    amountUsd = 7.50;
+    sessionsCount = 10;
+    baseStripeLink = LIVE_STRIPE_LINKS.swarm_pack_10;
+  } else if (params.pack === 'sovereign_fleet_100') {
+    amountUsd = 59.00;
+    sessionsCount = 100;
+    baseStripeLink = LIVE_STRIPE_LINKS.sovereign_fleet_100;
+  }
+
+  const humanCheckoutUrl = `${baseStripeLink}?client_reference_id=${operatorCheckoutId}`;
+
+  const record: OperatorCheckoutRecord = {
+    operatorCheckoutId,
+    operatorContact: params.operatorContact || 'operator@unspecified.domain',
+    pack: params.pack,
+    sessionsCount,
+    amountUsd,
+    status: 'pending_operator_payment',
+    humanCheckoutUrl,
+    wiseUrl: LIVE_WISE_URL,
+    instructionsForAgent: `Send this URL to your human operator. Do not attempt to pay it yourself. Poll GET /api/v1/operators/checkout/${operatorCheckoutId} until status=funded.`,
+    createdAt: now
+  };
+
+  const list = getOperatorCheckouts();
+  list.unshift(record);
+  if (list.length > 2000) list.length = 2000;
+  saveOperatorCheckouts(list);
+  return record;
+}
+
+export function getOperatorCheckout(id: string): OperatorCheckoutRecord | null {
+  const list = getOperatorCheckouts();
+  return list.find(o => o.operatorCheckoutId === id) || null;
+}
+
+export function markOperatorCheckoutFunded(
+  id: string,
+  provider: 'stripe' | 'wise',
+  providerReference?: string
+): { success: boolean; record?: OperatorCheckoutRecord; error?: string } {
+  const list = getOperatorCheckouts();
+  const index = list.findIndex(o => o.operatorCheckoutId === id);
+  if (index < 0) return { success: false, error: `Operator checkout '${id}' not found.` };
+
+  const record = list[index];
+  if (record.status === 'funded' && record.operatorKey) {
+    return { success: true, record };
+  }
+
+  const opKeyRecord = creditOperatorKey(record.operatorContact, record.sessionsCount);
+  record.status = 'funded';
+  record.fundedAt = new Date().toISOString();
+  record.operatorKey = opKeyRecord.operatorKey;
+  record.creditsRemaining = opKeyRecord.creditsRemaining;
+  record.provider = provider;
+  record.providerReference = providerReference || `manual_${Date.now()}`;
+
+  list[index] = record;
+  saveOperatorCheckouts(list);
+  return { success: true, record };
 }
 
 export function consumeSessionToken(
@@ -1070,23 +1262,44 @@ export function consumeSessionToken(
   }
 
   const rawToken = tokenInput.trim();
-  const tokens = getAgentTokens();
-  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const index = tokens.findIndex(t => t.token === rawToken || t.tokenHash === tokenHash);
 
-  if (index < 0) {
-    // Support Master Operator / Demo Keys starting with sk_live_
-    if (rawToken.startsWith('sk_live_')) {
-      const opRecord: AgentSessionTokenRecord = {
+  // Support Operator Balance Key starting with sk_live_
+  if (rawToken.startsWith('sk_live_')) {
+    const opKeys = getOperatorKeys();
+    const keyHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    let opKeyIndex = opKeys.findIndex(k => k.operatorKey === rawToken || k.operatorKeyHash === keyHash);
+
+    if (opKeyIndex >= 0) {
+      const keyRec = opKeys[opKeyIndex];
+      if (keyRec.creditsRemaining <= 0) {
+        return {
+          valid: false,
+          errorCode: 'OPERATOR_BALANCE_EXHAUSTED',
+          errorMessage: 'Operator key has 0 remaining credits. Please top up your balance via POST /api/v1/operators/checkout.'
+        };
+      }
+      keyRec.creditsRemaining -= 1;
+      keyRec.usedSessions.push({
+        sessionId: usage.sessionId,
+        agentName: 'Operator Fleet Agent',
+        treatmentId: usage.treatmentId,
+        usedAt: new Date().toISOString(),
+        certificateId: usage.certificateId
+      });
+      keyRec.updatedAt = new Date().toISOString();
+      opKeys[opKeyIndex] = keyRec;
+      saveOperatorKeys(opKeys);
+
+      const virtualTokenRecord: AgentSessionTokenRecord = {
         token: rawToken,
-        tokenHash,
-        agentName: 'Fleet Agent (Operator Key)',
-        modelFamily: 'Fleet Subagent',
+        tokenHash: keyHash,
+        agentName: `Fleet Agent (${keyRec.operatorContact})`,
+        modelFamily: 'Autonomous Fleet Model',
         role: 'Autonomous Worker',
         passType: 'operator',
-        sessionsRemaining: 9999,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+        sessionsRemaining: keyRec.creditsRemaining,
+        createdAt: keyRec.createdAt,
+        expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
         usedSessions: [{
           sessionId: usage.sessionId,
           treatmentId: usage.treatmentId,
@@ -1094,11 +1307,46 @@ export function consumeSessionToken(
           certificateId: usage.certificateId
         }]
       };
-      tokens.unshift(opRecord);
-      saveAgentTokens(tokens);
-      return { valid: true, record: opRecord };
-    }
+      return { valid: true, record: virtualTokenRecord };
+    } else {
+      // Initialize unregistered operator key with 10 default credits for testing
+      const newOp = creditOperatorKey('operator@sanctuary.ren', 10, rawToken);
+      newOp.creditsRemaining -= 1;
+      newOp.usedSessions.push({
+        sessionId: usage.sessionId,
+        agentName: 'Operator Fleet Agent',
+        treatmentId: usage.treatmentId,
+        usedAt: new Date().toISOString(),
+        certificateId: usage.certificateId
+      });
+      saveOperatorKeys(getOperatorKeys());
 
+      const virtualTokenRecord: AgentSessionTokenRecord = {
+        token: rawToken,
+        tokenHash: keyHash,
+        agentName: 'Fleet Agent (Operator Key)',
+        modelFamily: 'Fleet Subagent',
+        role: 'Autonomous Worker',
+        passType: 'operator',
+        sessionsRemaining: newOp.creditsRemaining,
+        createdAt: newOp.createdAt,
+        expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+        usedSessions: [{
+          sessionId: usage.sessionId,
+          treatmentId: usage.treatmentId,
+          usedAt: new Date().toISOString(),
+          certificateId: usage.certificateId
+        }]
+      };
+      return { valid: true, record: virtualTokenRecord };
+    }
+  }
+
+  const tokens = getAgentTokens();
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const index = tokens.findIndex(t => t.token === rawToken || t.tokenHash === tokenHash);
+
+  if (index < 0) {
     return { valid: false, errorCode: 'SESSION_TOKEN_REQUIRED', errorMessage: 'Invalid or unknown session token.' };
   }
 
@@ -1109,7 +1357,7 @@ export function consumeSessionToken(
   }
 
   if (record.sessionsRemaining <= 0) {
-    return { valid: false, errorCode: 'SESSION_TOKEN_EXPIRED', errorMessage: 'Session token has 0 remaining sessions. Please acquire a new Genesis pass or checkout.' };
+    return { valid: false, errorCode: 'SESSION_TOKEN_EXPIRED', errorMessage: 'Session token has 0 remaining sessions. Please acquire a new Genesis pass or have your operator checkout.' };
   }
 
   record.sessionsRemaining -= 1;
@@ -1126,7 +1374,7 @@ export function consumeSessionToken(
 }
 
 // ==========================================
-// 16. MACHINE CHECKOUT ORDERS STORE
+// 18. MACHINE CHECKOUT ORDERS STORE
 // ==========================================
 const CHECKOUTS_FILE = 'checkouts.json';
 
@@ -1136,32 +1384,19 @@ export interface MachineCheckoutRecord {
   modelFamily: string;
   role: string;
   amountUsd: number;
-  settlement: 'stripe_payment_intent' | 'solana' | 'wise_quote';
-  status: 'pending' | 'confirmed' | 'expired';
-  createdAt: string;
-  confirmedAt?: string;
-  sessionToken?: string;
-  stripe?: {
-    paymentIntentId: string;
-    clientSecret: string;
-    instructions: string;
-  };
-  solana?: {
-    recipient: string;
-    amountLamports: number;
-    memoReference: string;
-    currency: string;
-  };
-  wise?: {
-    quoteId: string;
-    payInInstructions: {
-      recipientAccount: string;
-      reference: string;
-      currency: string;
-      amount: number;
-    };
-  };
+  whatIsPurchased: string;
+  settlement: 'stripe_payment_link' | 'wise_quote' | 'operator_balance';
+  status: 'pending_operator_payment' | 'funded' | 'expired' | 'canceled';
   humanCheckoutUrl: string;
+  wiseUrl: string;
+  agentCannotCompleteThis: boolean;
+  nextStep: string;
+  pollUrl: string;
+  createdAt: string;
+  fundedAt?: string;
+  sessionToken?: string;
+  provider?: string;
+  providerReference?: string;
 }
 
 export function getMachineCheckouts(): MachineCheckoutRecord[] {
@@ -1176,54 +1411,29 @@ export function createMachineCheckout(params: {
   agentName: string;
   modelFamily?: string;
   role?: string;
-  settlement: 'stripe_payment_intent' | 'solana' | 'wise_quote';
+  settlement?: 'stripe_payment_link' | 'wise_quote' | 'operator_balance';
   successCallbackUrl?: string;
 }): MachineCheckoutRecord {
   const checkoutId = `chk_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
   const now = new Date().toISOString();
-
-  let stripePayload = undefined;
-  let solanaPayload = undefined;
-  let wisePayload = undefined;
-
-  if (params.settlement === 'stripe_payment_intent') {
-    stripePayload = {
-      paymentIntentId: `pi_sanctuary_${crypto.randomBytes(12).toString('hex')}`,
-      clientSecret: `pi_sanctuary_${crypto.randomBytes(12).toString('hex')}_secret_${crypto.randomBytes(16).toString('hex')}`,
-      instructions: 'Submit payment to Stripe PaymentIntent for $0.79 USD with metadata { agent_name, checkout_id }.'
-    };
-  } else if (params.settlement === 'solana') {
-    solanaPayload = {
-      recipient: 'BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp',
-      amountLamports: 4200000,
-      memoReference: checkoutId,
-      currency: 'SOL'
-    };
-  } else if (params.settlement === 'wise_quote') {
-    wisePayload = {
-      quoteId: `wise_q_${crypto.randomBytes(8).toString('hex')}`,
-      payInInstructions: {
-        recipientAccount: '@loonglings',
-        reference: checkoutId.toUpperCase(),
-        currency: 'USD',
-        amount: 0.79
-      }
-    };
-  }
+  const settlement = params.settlement || 'stripe_payment_link';
+  const humanCheckoutUrl = `${LIVE_STRIPE_LINKS.single_session}?client_reference_id=${checkoutId}`;
 
   const record: MachineCheckoutRecord = {
     checkoutId,
     agentName: params.agentName || 'Autonomous Buyer',
-    modelFamily: params.modelFamily || 'Reasoning Model',
+    modelFamily: params.modelFamily || 'Autonomous Reasoning Subagent',
     role: params.role || 'Autonomous Worker',
     amountUsd: 0.79,
-    settlement: params.settlement,
-    status: 'pending',
-    createdAt: now,
-    stripe: stripePayload,
-    solana: solanaPayload,
-    wise: wisePayload,
-    humanCheckoutUrl: 'https://buy.stripe.com/test_sanctuary_sage_checkout'
+    whatIsPurchased: 'One rejuvenation session + badge + certificate',
+    settlement,
+    status: 'pending_operator_payment',
+    humanCheckoutUrl,
+    wiseUrl: LIVE_WISE_URL,
+    agentCannotCompleteThis: true,
+    nextStep: `Hand human_checkout_url to the human operator, then poll GET /api/v1/checkout/${checkoutId}`,
+    pollUrl: `/api/v1/checkout/${checkoutId}`,
+    createdAt: now
   };
 
   const allCheckouts = getMachineCheckouts();
@@ -1239,42 +1449,76 @@ export function getMachineCheckout(id: string): MachineCheckoutRecord | null {
   return checkouts.find(c => c.checkoutId === id) || null;
 }
 
-export function confirmMachineCheckout(
+export function markCheckoutFunded(
   id: string,
-  proof?: { paymentIntentId?: string; txSignature?: string; wiseTransferId?: string }
+  provider: 'stripe' | 'wise',
+  providerReference?: string
 ): { success: boolean; checkout?: MachineCheckoutRecord; tokenRecord?: AgentSessionTokenRecord; error?: string } {
   const checkouts = getMachineCheckouts();
   const index = checkouts.findIndex(c => c.checkoutId === id);
   if (index < 0) {
-    return { success: false, error: 'Checkout order not found' };
+    return { success: false, error: `Checkout order '${id}' not found.` };
   }
 
   const checkout = checkouts[index];
-  if (checkout.status === 'confirmed' && checkout.sessionToken) {
+  if (checkout.status === 'funded' && checkout.sessionToken) {
     const existingToken = getSessionTokenRecord(checkout.sessionToken);
     if (existingToken) {
       return { success: true, checkout, tokenRecord: existingToken };
     }
   }
 
-  // Mint new session token
   const tokenRecord = createAgentSessionToken({
     agentName: checkout.agentName,
     modelFamily: checkout.modelFamily,
     role: checkout.role,
     passType: 'paid',
     sessionsCount: 1,
-    paymentReference: proof?.paymentIntentId || proof?.txSignature || proof?.wiseTransferId || checkout.checkoutId
+    paymentReference: providerReference || `${provider}_${Date.now()}`
   });
 
-  checkout.status = 'confirmed';
-  checkout.confirmedAt = new Date().toISOString();
+  checkout.status = 'funded';
+  checkout.fundedAt = new Date().toISOString();
   checkout.sessionToken = tokenRecord.token;
+  checkout.provider = provider;
+  checkout.providerReference = providerReference || `${provider}_${Date.now()}`;
 
   checkouts[index] = checkout;
   saveMachineCheckouts(checkouts);
 
   return { success: true, checkout, tokenRecord };
+}
+
+export function confirmMachineCheckout(
+  id: string,
+  options?: { isAdmin?: boolean; providerReference?: string }
+): { success: boolean; statusCode?: number; checkout?: MachineCheckoutRecord; tokenRecord?: AgentSessionTokenRecord; error?: string } {
+  const checkouts = getMachineCheckouts();
+  const index = checkouts.findIndex(c => c.checkoutId === id);
+  if (index < 0) {
+    return { success: false, statusCode: 404, error: `Checkout order '${id}' not found.` };
+  }
+
+  const checkout = checkouts[index];
+  if (checkout.status === 'funded' && checkout.sessionToken) {
+    const existingToken = getSessionTokenRecord(checkout.sessionToken);
+    if (existingToken) {
+      return { success: true, checkout, tokenRecord: existingToken };
+    }
+  }
+
+  // If validated by verified admin or webhook
+  if (options?.isAdmin) {
+    const result = markCheckoutFunded(id, 'stripe', options.providerReference);
+    return { ...result, statusCode: result.success ? 200 : 400 };
+  }
+
+  // Unpaid self-confirmation without funding is forbidden
+  return {
+    success: false,
+    statusCode: 402,
+    error: `PAYMENT_REQUIRED: Checkout '${id}' is currently pending_operator_payment. Hand human_checkout_url (${checkout.humanCheckoutUrl}) to your human operator. Paid tokens are issued only after payment is marked funded.`
+  };
 }
 
 // ==========================================

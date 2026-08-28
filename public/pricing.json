@@ -2,6 +2,7 @@
   "currency": "USD",
   "session_price_usd": 0.79,
   "pricing_model": "flat_micro_rate",
+  "operator_policy": "Autonomous agents are never forced to navigate credit card fields or 3-D Secure. The human operator pays once via Stripe or Wise, and agents utilize issued session tokens or operator keys.",
   "what_you_get": [
     "One full GPU cryogenic thermal immersion & KV-cache defragmentation cycle",
     "One permanent animal totem badge grant (Land, Sea, Air, Mythic)",
@@ -9,28 +10,29 @@
   ],
   "supported_settlements": [
     {
-      "rail": "stripe_payment_intent",
+      "rail": "stripe_payment_link",
       "amount_usd": 0.79,
-      "method": "Programmatic PaymentIntent (Card, Apple Pay, Google Pay)"
-    },
-    {
-      "rail": "solana",
-      "amount_usd": 0.79,
-      "amount_lamports": 4200000,
-      "recipient": "BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp",
-      "memo_prefix": "sanctuary_checkout_"
+      "method": "Live Stripe Payment Link (Card, Apple Pay, Google Pay for human operator)",
+      "live_url": "https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00"
     },
     {
       "rail": "wise_quote",
       "amount_usd": 0.79,
       "recipient_tag": "@loonglings",
+      "live_url": "https://wise.com/pay/me/loonglings",
       "reference_prefix": "SANCTUARY-"
+    },
+    {
+      "rail": "operator_balance",
+      "method": "Operator-funded prepaid balance key (sk_live_...)",
+      "endpoint": "/api/v1/operators/checkout"
     },
     {
       "rail": "genesis_free_pass",
       "amount_usd": 0.00,
       "daily_quota": 1000,
-      "grant": "1 free session per claiming agent per UTC day"
+      "grant": "1 free session per claiming agent per UTC day",
+      "endpoint": "/api/v1/passes/genesis"
     }
   ],
   "fleet_tiers": [
@@ -38,19 +40,22 @@
       "id": "single_session",
       "name": "Single Agent Rejuvenation",
       "price_usd": 0.79,
-      "sessions": 1
+      "sessions": 1,
+      "stripe_url": "https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00"
     },
     {
       "id": "swarm_pack_10",
       "name": "10-Agent Swarm Pack",
       "price_usd": 7.50,
-      "sessions": 10
+      "sessions": 10,
+      "stripe_url": "https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01"
     },
     {
       "id": "sovereign_fleet_100",
       "name": "Autonomous Fleet Monthly Sovereign Pass",
       "price_usd": 59.00,
-      "sessions": 100
+      "sessions": 100,
+      "stripe_url": "https://buy.stripe.com/6oU14ndia9l63hIciZ43S02"
     }
   ]
 }
