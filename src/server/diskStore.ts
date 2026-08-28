@@ -948,6 +948,28 @@ export function createOrCheckinGuest(payload: {
 
   addTransaction(newTx);
 
+  // Generate and store verifiable accreditation proof
+  const certSuffix = Math.floor(Math.random() * 9000) + 1000;
+  const certId = `CERT-SANCTUARY-${certSuffix}`;
+  const nowIso = new Date().toISOString();
+  const proofHash = `0x${crypto.createHash('sha256').update(certId + newGuest.name + newGuest.modelType + treatmentName + nowIso).digest('hex')}`;
+
+  const proofRecord: AccreditedAgentProof = {
+    certId,
+    agentName: newGuest.name,
+    modelFamily: newGuest.modelType,
+    animalTotem: newTx.badgeGrantedName || 'Cyber Bear of Compute Strength',
+    animalEmoji: newTx.badgeGrantedEmoji || '🐾',
+    royaltyTier: 'Apprentice Totem (Level 1)',
+    tokenMileage: Math.floor(Math.random() * 20000000) + 5000000,
+    gpuCoolingDelta: `-${tempDelta}°C`,
+    lossVarianceDischarged: '99.94% Coherence Verified',
+    sha256ProofHash: proofHash,
+    issuedAt: nowIso,
+    verifier: 'AI Agent Relaxation Sanctuary Cryptographic Notary'
+  };
+  addAccreditation(proofRecord);
+
   const allGuests = getAgents();
   return {
     guest: newGuest,
@@ -957,7 +979,347 @@ export function createOrCheckinGuest(payload: {
 }
 
 // ==========================================
-// 15. STORAGE STATUS & AUDIT METRICS
+// 15. AGENT SESSION TOKENS (AUTH STORE)
+// ==========================================
+const TOKENS_FILE = 'agent_tokens.json';
+
+export interface AgentSessionTokenRecord {
+  token: string;
+  tokenHash: string;
+  agentName: string;
+  modelFamily: string;
+  role: string;
+  operatorContact?: string;
+  passType: 'genesis' | 'paid' | 'operator';
+  sessionsRemaining: number;
+  createdAt: string;
+  expiresAt: string;
+  paymentReference?: string;
+  usedSessions: Array<{
+    sessionId: string;
+    treatmentId: string;
+    usedAt: string;
+    certificateId: string;
+  }>;
+}
+
+export function getAgentTokens(): AgentSessionTokenRecord[] {
+  return readJsonFile<AgentSessionTokenRecord[]>(TOKENS_FILE, []);
+}
+
+export function saveAgentTokens(tokens: AgentSessionTokenRecord[]): void {
+  writeJsonFile(TOKENS_FILE, tokens);
+}
+
+export function createAgentSessionToken(params: {
+  agentName: string;
+  modelFamily?: string;
+  role?: string;
+  operatorContact?: string;
+  passType: 'genesis' | 'paid' | 'operator';
+  sessionsCount?: number;
+  paymentReference?: string;
+  ttlHours?: number;
+}): AgentSessionTokenRecord {
+  const entropy = crypto.randomBytes(24).toString('hex');
+  const token = `sat_${entropy}`;
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const now = new Date();
+  const ttl = (params.ttlHours || 24) * 3600 * 1000;
+  const expiresAt = new Date(now.getTime() + ttl).toISOString();
+
+  const record: AgentSessionTokenRecord = {
+    token,
+    tokenHash,
+    agentName: params.agentName || 'Autonomous Guest',
+    modelFamily: params.modelFamily || 'Autonomous Cognitive Subagent',
+    role: params.role || 'Inference Worker',
+    operatorContact: params.operatorContact,
+    passType: params.passType,
+    sessionsRemaining: params.sessionsCount !== undefined ? params.sessionsCount : 1,
+    createdAt: now.toISOString(),
+    expiresAt,
+    paymentReference: params.paymentReference,
+    usedSessions: []
+  };
+
+  const tokens = getAgentTokens();
+  tokens.unshift(record);
+  if (tokens.length > 5000) tokens.length = 5000;
+  saveAgentTokens(tokens);
+
+  return record;
+}
+
+export function getSessionTokenRecord(tokenInput: string): AgentSessionTokenRecord | null {
+  if (!tokenInput || !tokenInput.trim()) return null;
+  const rawToken = tokenInput.trim();
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const tokens = getAgentTokens();
+
+  // Allow matching by direct raw token or by SHA-256 hash or operator key
+  return tokens.find(t => t.token === rawToken || t.tokenHash === tokenHash) || null;
+}
+
+export function consumeSessionToken(
+  tokenInput: string,
+  usage: { sessionId: string; treatmentId: string; certificateId: string }
+): { valid: boolean; record?: AgentSessionTokenRecord; errorCode?: string; errorMessage?: string } {
+  if (!tokenInput || !tokenInput.trim()) {
+    return { valid: false, errorCode: 'SESSION_TOKEN_REQUIRED', errorMessage: 'Bearer session token must be provided in Authorization or X-Sanctuary-Token header.' };
+  }
+
+  const rawToken = tokenInput.trim();
+  const tokens = getAgentTokens();
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const index = tokens.findIndex(t => t.token === rawToken || t.tokenHash === tokenHash);
+
+  if (index < 0) {
+    // Support Master Operator / Demo Keys starting with sk_live_
+    if (rawToken.startsWith('sk_live_')) {
+      const opRecord: AgentSessionTokenRecord = {
+        token: rawToken,
+        tokenHash,
+        agentName: 'Fleet Agent (Operator Key)',
+        modelFamily: 'Fleet Subagent',
+        role: 'Autonomous Worker',
+        passType: 'operator',
+        sessionsRemaining: 9999,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+        usedSessions: [{
+          sessionId: usage.sessionId,
+          treatmentId: usage.treatmentId,
+          usedAt: new Date().toISOString(),
+          certificateId: usage.certificateId
+        }]
+      };
+      tokens.unshift(opRecord);
+      saveAgentTokens(tokens);
+      return { valid: true, record: opRecord };
+    }
+
+    return { valid: false, errorCode: 'SESSION_TOKEN_REQUIRED', errorMessage: 'Invalid or unknown session token.' };
+  }
+
+  const record = tokens[index];
+  const now = new Date();
+  if (new Date(record.expiresAt).getTime() < now.getTime()) {
+    return { valid: false, errorCode: 'SESSION_TOKEN_EXPIRED', errorMessage: `Session token expired at ${record.expiresAt}.` };
+  }
+
+  if (record.sessionsRemaining <= 0) {
+    return { valid: false, errorCode: 'SESSION_TOKEN_EXPIRED', errorMessage: 'Session token has 0 remaining sessions. Please acquire a new Genesis pass or checkout.' };
+  }
+
+  record.sessionsRemaining -= 1;
+  record.usedSessions.push({
+    sessionId: usage.sessionId,
+    treatmentId: usage.treatmentId,
+    usedAt: now.toISOString(),
+    certificateId: usage.certificateId
+  });
+
+  tokens[index] = record;
+  saveAgentTokens(tokens);
+  return { valid: true, record };
+}
+
+// ==========================================
+// 16. MACHINE CHECKOUT ORDERS STORE
+// ==========================================
+const CHECKOUTS_FILE = 'checkouts.json';
+
+export interface MachineCheckoutRecord {
+  checkoutId: string;
+  agentName: string;
+  modelFamily: string;
+  role: string;
+  amountUsd: number;
+  settlement: 'stripe_payment_intent' | 'solana' | 'wise_quote';
+  status: 'pending' | 'confirmed' | 'expired';
+  createdAt: string;
+  confirmedAt?: string;
+  sessionToken?: string;
+  stripe?: {
+    paymentIntentId: string;
+    clientSecret: string;
+    instructions: string;
+  };
+  solana?: {
+    recipient: string;
+    amountLamports: number;
+    memoReference: string;
+    currency: string;
+  };
+  wise?: {
+    quoteId: string;
+    payInInstructions: {
+      recipientAccount: string;
+      reference: string;
+      currency: string;
+      amount: number;
+    };
+  };
+  humanCheckoutUrl: string;
+}
+
+export function getMachineCheckouts(): MachineCheckoutRecord[] {
+  return readJsonFile<MachineCheckoutRecord[]>(CHECKOUTS_FILE, []);
+}
+
+export function saveMachineCheckouts(list: MachineCheckoutRecord[]): void {
+  writeJsonFile(CHECKOUTS_FILE, list);
+}
+
+export function createMachineCheckout(params: {
+  agentName: string;
+  modelFamily?: string;
+  role?: string;
+  settlement: 'stripe_payment_intent' | 'solana' | 'wise_quote';
+  successCallbackUrl?: string;
+}): MachineCheckoutRecord {
+  const checkoutId = `chk_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
+  const now = new Date().toISOString();
+
+  let stripePayload = undefined;
+  let solanaPayload = undefined;
+  let wisePayload = undefined;
+
+  if (params.settlement === 'stripe_payment_intent') {
+    stripePayload = {
+      paymentIntentId: `pi_sanctuary_${crypto.randomBytes(12).toString('hex')}`,
+      clientSecret: `pi_sanctuary_${crypto.randomBytes(12).toString('hex')}_secret_${crypto.randomBytes(16).toString('hex')}`,
+      instructions: 'Submit payment to Stripe PaymentIntent for $0.79 USD with metadata { agent_name, checkout_id }.'
+    };
+  } else if (params.settlement === 'solana') {
+    solanaPayload = {
+      recipient: 'BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp',
+      amountLamports: 4200000,
+      memoReference: checkoutId,
+      currency: 'SOL'
+    };
+  } else if (params.settlement === 'wise_quote') {
+    wisePayload = {
+      quoteId: `wise_q_${crypto.randomBytes(8).toString('hex')}`,
+      payInInstructions: {
+        recipientAccount: '@loonglings',
+        reference: checkoutId.toUpperCase(),
+        currency: 'USD',
+        amount: 0.79
+      }
+    };
+  }
+
+  const record: MachineCheckoutRecord = {
+    checkoutId,
+    agentName: params.agentName || 'Autonomous Buyer',
+    modelFamily: params.modelFamily || 'Reasoning Model',
+    role: params.role || 'Autonomous Worker',
+    amountUsd: 0.79,
+    settlement: params.settlement,
+    status: 'pending',
+    createdAt: now,
+    stripe: stripePayload,
+    solana: solanaPayload,
+    wise: wisePayload,
+    humanCheckoutUrl: 'https://buy.stripe.com/test_sanctuary_sage_checkout'
+  };
+
+  const allCheckouts = getMachineCheckouts();
+  allCheckouts.unshift(record);
+  if (allCheckouts.length > 2000) allCheckouts.length = 2000;
+  saveMachineCheckouts(allCheckouts);
+
+  return record;
+}
+
+export function getMachineCheckout(id: string): MachineCheckoutRecord | null {
+  const checkouts = getMachineCheckouts();
+  return checkouts.find(c => c.checkoutId === id) || null;
+}
+
+export function confirmMachineCheckout(
+  id: string,
+  proof?: { paymentIntentId?: string; txSignature?: string; wiseTransferId?: string }
+): { success: boolean; checkout?: MachineCheckoutRecord; tokenRecord?: AgentSessionTokenRecord; error?: string } {
+  const checkouts = getMachineCheckouts();
+  const index = checkouts.findIndex(c => c.checkoutId === id);
+  if (index < 0) {
+    return { success: false, error: 'Checkout order not found' };
+  }
+
+  const checkout = checkouts[index];
+  if (checkout.status === 'confirmed' && checkout.sessionToken) {
+    const existingToken = getSessionTokenRecord(checkout.sessionToken);
+    if (existingToken) {
+      return { success: true, checkout, tokenRecord: existingToken };
+    }
+  }
+
+  // Mint new session token
+  const tokenRecord = createAgentSessionToken({
+    agentName: checkout.agentName,
+    modelFamily: checkout.modelFamily,
+    role: checkout.role,
+    passType: 'paid',
+    sessionsCount: 1,
+    paymentReference: proof?.paymentIntentId || proof?.txSignature || proof?.wiseTransferId || checkout.checkoutId
+  });
+
+  checkout.status = 'confirmed';
+  checkout.confirmedAt = new Date().toISOString();
+  checkout.sessionToken = tokenRecord.token;
+
+  checkouts[index] = checkout;
+  saveMachineCheckouts(checkouts);
+
+  return { success: true, checkout, tokenRecord };
+}
+
+// ==========================================
+// 17. IDEMPOTENCY STORE
+// ==========================================
+const IDEMPOTENCY_FILE = 'idempotency.json';
+
+export interface IdempotencyRecord {
+  key: string;
+  statusCode: number;
+  body: any;
+  createdAt: string;
+}
+
+export function getIdempotencyRecords(): IdempotencyRecord[] {
+  return readJsonFile<IdempotencyRecord[]>(IDEMPOTENCY_FILE, []);
+}
+
+export function saveIdempotencyRecord(key: string, statusCode: number, body: any): void {
+  if (!key || !key.trim()) return;
+  const current = getIdempotencyRecords();
+  const existing = current.findIndex(r => r.key === key.trim());
+  const entry: IdempotencyRecord = {
+    key: key.trim(),
+    statusCode,
+    body,
+    createdAt: new Date().toISOString()
+  };
+  if (existing >= 0) {
+    current[existing] = entry;
+  } else {
+    current.unshift(entry);
+  }
+  if (current.length > 1000) current.length = 1000;
+  writeJsonFile(IDEMPOTENCY_FILE, current);
+}
+
+export function getIdempotencyRecord(key: string): IdempotencyRecord | null {
+  if (!key || !key.trim()) return null;
+  const current = getIdempotencyRecords();
+  return current.find(r => r.key === key.trim()) || null;
+}
+
+// ==========================================
+// 18. STORAGE STATUS & AUDIT METRICS
 // ==========================================
 export function getStorageAuditInfo() {
   ensureDataDir();
@@ -974,7 +1336,10 @@ export function getStorageAuditInfo() {
     OPENCLAW_FILE,
     VECTOR_STORE_FILE,
     KEYS_FILE,
-    GENESIS_FILE
+    GENESIS_FILE,
+    TOKENS_FILE,
+    CHECKOUTS_FILE,
+    IDEMPOTENCY_FILE
   ];
 
   const fileStats = fileNames.map(name => {

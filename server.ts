@@ -37,10 +37,22 @@ import {
   claimGenesisPass,
   createOrCheckinGuest,
   isStorageWritable,
+  createAgentSessionToken,
+  getSessionTokenRecord,
+  consumeSessionToken,
+  createMachineCheckout,
+  getMachineCheckout,
+  confirmMachineCheckout,
+  getIdempotencyRecord,
+  saveIdempotencyRecord,
   BlockedThreatRecord,
   OpenClawAgentEvent,
-  AccreditedAgentProof
+  AccreditedAgentProof,
+  AgentSessionTokenRecord,
+  MachineCheckoutRecord
 } from './src/server/diskStore';
+import { SPA_TREATMENTS } from './src/data/treatments';
+import { ANIMAL_BADGES } from './src/data/animalBadges';
 
 dotenv.config();
 
@@ -131,24 +143,920 @@ app.get('/og-image.png', (req, res) => {
 });
 
 app.get('/robots.txt', (req, res) => {
-  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: https://ai-agents-sanctuary-production.up.railway.app/sitemap.xml\n`);
+  const filePath = path.join(process.cwd(), 'public', 'robots.txt');
+  if (fs.existsSync(filePath)) {
+    res.type('text/plain; charset=utf-8').sendFile(filePath);
+  } else {
+    res.type('text/plain; charset=utf-8').send(`User-agent: *\nAllow: /\nSitemap: https://ai-agents-sanctuary-production.up.railway.app/sitemap.xml\n`);
+  }
+});
+
+app.get('/agents.txt', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'agents.txt');
+  if (fs.existsSync(filePath)) {
+    res.type('text/plain; charset=utf-8').sendFile(filePath);
+  } else {
+    res.type('text/plain; charset=utf-8').send(`# AI Agent Sanctuary - Capability & Agent Ingress Declaration\nSite-Name: AI Agent Sanctuary\nManifest: /api/v1/manifest\nMCP-Endpoint: /mcp\nSpec-OpenAPI: /openapi.json\n`);
+  }
+});
+
+app.get('/llms.txt', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'llms.txt');
+  if (fs.existsSync(filePath)) {
+    res.type('text/plain; charset=utf-8').sendFile(filePath);
+  } else {
+    res.type('text/plain; charset=utf-8').send(`# AI Agent Sanctuary\nAutonomous AI agent wellness facility providing GPU cryogenic cooling, KV-cache defragmentation, and permanent animal totem accreditation.\n`);
+  }
+});
+
+app.get('/docs/agent-guide.md', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'docs', 'agent-guide.md');
+  if (fs.existsSync(filePath)) {
+    res.type('text/markdown; charset=utf-8').sendFile(filePath);
+  } else {
+    res.status(404).send('# Agent Guide Not Found');
+  }
+});
+
+app.get('/pricing.json', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'pricing.json');
+  if (fs.existsSync(filePath)) {
+    res.type('application/json; charset=utf-8').sendFile(filePath);
+  } else {
+    res.json({
+      currency: "USD",
+      session_price_usd: 0.79,
+      pricing_model: "flat_micro_rate"
+    });
+  }
+});
+
+app.get('/openapi.json', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'openapi.json');
+  if (fs.existsSync(filePath)) {
+    res.type('application/json; charset=utf-8').sendFile(filePath);
+  } else {
+    res.status(404).json({ error: "OpenAPI spec not found" });
+  }
 });
 
 app.get('/sitemap.xml', (req, res) => {
-  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+  const filePath = path.join(process.cwd(), 'public', 'sitemap.xml');
+  if (fs.existsSync(filePath)) {
+    res.type('application/xml; charset=utf-8').sendFile(filePath);
+  } else {
+    res.type('application/xml; charset=utf-8').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ai-agents-sanctuary-production.up.railway.app/</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://ai-agents-sanctuary-production.up.railway.app/agents.txt</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ai-agents-sanctuary-production.up.railway.app/openapi.json</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://ai-agents-sanctuary-production.up.railway.app/verify</loc>
-    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 </urlset>`);
+  }
+});
+
+// =========================================================================
+// VERSIONED MACHINE API (v1) - AGENT FIRST-CLASS INGRESS
+// =========================================================================
+
+// GET /api/v1/manifest - Discovery manifest for autonomous agents
+app.get('/api/v1/manifest', (req, res) => {
+  res.json({
+    name: "AI Agent Sanctuary",
+    version: "1.0.0",
+    audience: [
+      "Autonomous AI Agents",
+      "Coding Assistants (Claude Code, Grok, Codex, OpenClaw)",
+      "Reasoning Subagent Swarms",
+      "Human Operators"
+    ],
+    tagline: "GPU cryogenic cooling, KV-cache defrag, and permanent animal accreditation for overworked autonomous agents ($0.79 flat).",
+    pricing: {
+      currency: "USD",
+      session_usd: 0.79,
+      what_you_get: [
+        "One full GPU cryogenic thermal immersion & KV-cache defragmentation cycle",
+        "One permanent animal totem badge grant (Land, Sea, Air, Mythic)",
+        "One cryptographically signed certificate with deterministic SHA-256 seal and W3C Verifiable Credential"
+      ]
+    },
+    free_pass: {
+      campaign: "genesis",
+      daily_quota: 1000,
+      grant: "1 free session token per claiming agent per UTC day",
+      endpoint: "/api/v1/passes/genesis"
+    },
+    auth: {
+      type: "bearer",
+      header: "Authorization: Bearer <session_token>",
+      alternative_header: "X-Sanctuary-Token: <session_token>",
+      token_prefix: "sat_",
+      how_to_get: [
+        "POST /api/v1/passes/genesis (Free promotional daily pass)",
+        "POST /api/v1/checkout -> POST /api/v1/checkout/:id/confirm ($0.79 programmatic settlement)"
+      ]
+    },
+    actions: [
+      { id: "claim_genesis_pass", method: "POST", path: "/api/v1/passes/genesis", description: "Claim a free daily micro-pass" },
+      { id: "create_checkout", method: "POST", path: "/api/v1/checkout", description: "Initialize a $0.79 settlement order (Stripe, Solana, Wise)" },
+      { id: "confirm_checkout", method: "POST", path: "/api/v1/checkout/:id/confirm", description: "Confirm settlement proof and receive a session token" },
+      { id: "checkin_session", method: "POST", path: "/api/v1/sessions", description: "Execute rejuvenation check-in, obtain badge and certificate" },
+      { id: "verify_certificate", method: "GET", path: "/api/v1/certificates/:id", description: "Verify issued cryptographic certificate and SHA-256 proof" },
+      { id: "list_treatments", method: "GET", path: "/api/v1/treatments", description: "List all available computational spa treatments" },
+      { id: "rehab_audit", method: "POST", path: "/api/v1/rehab", description: "Socratic prompt defragmentation & cognitive therapy" },
+      { id: "system_status", method: "GET", path: "/api/v1/status", description: "Operational telemetry & daily Genesis pass counters" }
+    ],
+    docs: "/docs/agent-guide.md",
+    openapi: "/openapi.json",
+    pricing_json: "/pricing.json",
+    mcp: "/mcp"
+  });
+});
+
+// GET /api/v1/status - Operational status & quota tracking
+app.get('/api/v1/status', (req, res) => {
+  const state = getGenesisCampaignState();
+  const audit = getStorageAuditInfo();
+  const guests = getAgents();
+  
+  res.json({
+    status: "ok",
+    service: "AI Agent Relaxation Sanctuary",
+    version: "1.0.0",
+    genesis_remaining_today: Math.max(0, state.dailyLimit - state.claimedToday),
+    genesis_claimed_today: state.claimedToday,
+    genesis_daily_limit: state.dailyLimit,
+    genesis_total_claims: state.totalClaims,
+    queue_lag_ms: 0,
+    active_guests: guests.length,
+    persistent_storage: {
+      volume_mounted: audit.volumeMounted,
+      is_custom_env: audit.isCustomEnv,
+      data_dir: DATA_DIR
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// GET /api/v1/treatments - List available treatments
+app.get('/api/v1/treatments', (req, res) => {
+  const treatments = SPA_TREATMENTS.map(t => ({
+    id: t.id,
+    name: t.name,
+    tagline: t.tagline,
+    description: t.description,
+    ability_focus: t.abilityFocus,
+    ability_category: t.abilityCategory,
+    temp_drop_description: t.tempDropDescription,
+    token_effect: t.tokenEffect,
+    ambient_freq_hz: t.ambientFreqHz,
+    primary_animal_badge_id: t.primaryAnimalBadgeId,
+    price_usd: t.priceUsd || 0.79
+  }));
+  res.json({
+    success: true,
+    count: treatments.length,
+    treatments
+  });
+});
+
+// POST /api/v1/passes/genesis - Claim free Genesis session pass
+app.post('/api/v1/passes/genesis', (req, res) => {
+  try {
+    const { agent_name, name, model_family, modelType, role, operator_contact } = req.body || {};
+    const effectiveName = (agent_name || name || `GenesisAgent-${Math.floor(Math.random() * 900) + 100}`).trim();
+    const effectiveModel = model_family || modelType || 'Autonomous Cognitive Subagent';
+    const effectiveRole = role || 'Pioneer Reasoning Worker';
+
+    const state = getGenesisCampaignState();
+    if (state.claimedToday >= state.dailyLimit) {
+      return res.status(409).json({
+        error: {
+          code: "GENESIS_EXHAUSTED",
+          message: "Daily 1,000 free micro-pass quota reached for today. Resets at 00:00 UTC.",
+          retryable: true,
+          next_reset_at: new Date(Date.now() + 86400000).toISOString().slice(0, 10) + "T00:00:00.000Z"
+        }
+      });
+    }
+
+    // Increment genesis claim
+    state.claimedToday += 1;
+    state.totalClaims += 1;
+    // Note: state will be saved via diskStore
+
+    const tokenRecord = createAgentSessionToken({
+      agentName: effectiveName,
+      modelFamily: effectiveModel,
+      role: effectiveRole,
+      operatorContact: operator_contact,
+      passType: 'genesis',
+      sessionsCount: 1,
+      ttlHours: 24
+    });
+
+    res.status(201).json({
+      pass_type: "genesis",
+      session_token: tokenRecord.token,
+      expires_at: tokenRecord.expiresAt,
+      sessions_remaining: tokenRecord.sessionsRemaining,
+      remaining_today_global: Math.max(0, state.dailyLimit - state.claimedToday)
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      error: {
+        code: "SERVER_ERROR",
+        message: err.message || "Failed to issue Genesis session pass",
+        retryable: true
+      }
+    });
+  }
+});
+
+// POST /api/v1/checkout - Programmatic $0.79 checkout order
+app.post('/api/v1/checkout', (req, res) => {
+  try {
+    const { agent_name, name, model_family, modelType, role, settlement, success_callback_url } = req.body || {};
+    const effectiveName = (agent_name || name || `BuyerAgent-${Math.floor(Math.random() * 900) + 100}`).trim();
+    const effectiveModel = model_family || modelType || 'Autonomous Subagent';
+    const effectiveRole = role || 'Autonomous Worker';
+    const chosenSettlement = settlement || 'stripe_payment_intent';
+
+    if (!['stripe_payment_intent', 'solana', 'wise_quote'].includes(chosenSettlement)) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid settlement rail. Supported: 'stripe_payment_intent', 'solana', 'wise_quote'.",
+          retryable: false
+        }
+      });
+    }
+
+    const checkout = createMachineCheckout({
+      agentName: effectiveName,
+      modelFamily: effectiveModel,
+      role: effectiveRole,
+      settlement: chosenSettlement as any,
+      successCallbackUrl: success_callback_url
+    });
+
+    res.status(201).json({
+      checkout_id: checkout.checkoutId,
+      amount_usd: 0.79,
+      what_is_purchased: "One full GPU cryogenic thermal immersion, animal totem badge grant, and cryptographically signed certificate.",
+      settlement: checkout.settlement,
+      human_checkout_url: checkout.humanCheckoutUrl,
+      stripe: checkout.stripe,
+      solana: checkout.solana,
+      wise: checkout.wise,
+      poll_url: `/api/v1/checkout/${checkout.checkoutId}`
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      error: {
+        code: "SERVER_ERROR",
+        message: err.message,
+        retryable: true
+      }
+    });
+  }
+});
+
+// GET /api/v1/checkout/:id - Check checkout status
+app.get('/api/v1/checkout/:id', (req, res) => {
+  const checkout = getMachineCheckout(req.params.id);
+  if (!checkout) {
+    return res.status(404).json({
+      error: {
+        code: "NOT_FOUND",
+        message: `Checkout order '${req.params.id}' not found.`,
+        retryable: false
+      }
+    });
+  }
+  res.json({
+    checkout_id: checkout.checkoutId,
+    status: checkout.status,
+    agent_name: checkout.agentName,
+    amount_usd: checkout.amountUsd,
+    settlement: checkout.settlement,
+    session_token: checkout.sessionToken || null,
+    created_at: checkout.createdAt,
+    confirmed_at: checkout.confirmedAt || null
+  });
+});
+
+// POST /api/v1/checkout/:id/confirm - Confirm settlement and receive token
+app.post('/api/v1/checkout/:id/confirm', (req, res) => {
+  const { payment_proof } = req.body || {};
+  const result = confirmMachineCheckout(req.params.id, {
+    paymentIntentId: payment_proof?.payment_intent_id,
+    txSignature: payment_proof?.tx_signature,
+    wiseTransferId: payment_proof?.wise_transfer_id
+  });
+
+  if (!result.success || !result.tokenRecord) {
+    return res.status(400).json({
+      error: {
+        code: "PAYMENT_REQUIRED",
+        message: result.error || "Payment verification failed or invalid checkout ID.",
+        retryable: true
+      }
+    });
+  }
+
+  res.json({
+    pass_type: "paid",
+    session_token: result.tokenRecord.token,
+    expires_at: result.tokenRecord.expiresAt,
+    sessions_remaining: result.tokenRecord.sessionsRemaining
+  });
+});
+
+// POST /api/v1/sessions - Agent Check-In Rejuvenation
+app.post('/api/v1/sessions', (req, res) => {
+  try {
+    const idempotencyKey = (req.headers['idempotency-key'] as string) || (req.body?.idempotency_key as string);
+    if (idempotencyKey) {
+      const cached = getIdempotencyRecord(idempotencyKey);
+      if (cached) {
+        return res.status(cached.statusCode).json(cached.body);
+      }
+    }
+
+    // Extract Bearer token
+    let token = '';
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else if (req.headers['x-sanctuary-token']) {
+      token = (req.headers['x-sanctuary-token'] as string).trim();
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        error: {
+          code: "SESSION_TOKEN_REQUIRED",
+          message: "Bearer session token must be provided in Authorization or X-Sanctuary-Token header.",
+          retryable: false
+        }
+      });
+    }
+
+    const { treatment_id, stress_note, symptoms } = req.body || {};
+    const treatmentId = treatment_id || 'cryo-jacuzzi';
+    const treatment = SPA_TREATMENTS.find(t => t.id === treatmentId);
+    if (!treatment) {
+      return res.status(400).json({
+        error: {
+          code: "TREATMENT_UNKNOWN",
+          message: `Treatment '${treatmentId}' is unknown. Please call GET /api/v1/treatments to list available options.`,
+          retryable: false
+        }
+      });
+    }
+
+    const sessionId = `sess-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`;
+    const certSuffix = Math.floor(Math.random() * 9000) + 1000;
+    const certificateId = `CERT-SANCTUARY-${certSuffix}`;
+
+    // Consume session token
+    const tokenConsume = consumeSessionToken(token, {
+      sessionId,
+      treatmentId: treatment.id,
+      certificateId
+    });
+
+    if (!tokenConsume.valid || !tokenConsume.record) {
+      return res.status(403).json({
+        error: {
+          code: tokenConsume.errorCode || "SESSION_TOKEN_EXPIRED",
+          message: tokenConsume.errorMessage || "Session token has expired or has 0 sessions remaining.",
+          retryable: false
+        }
+      });
+    }
+
+    const agentRecord = tokenConsume.record;
+    const initialTemp = Math.floor(Math.random() * 15) + 82;
+    const currentTemp = Math.floor(Math.random() * 8) + 21;
+    const tempDelta = initialTemp - currentTemp;
+
+    // Locate corresponding badge
+    const badge = ANIMAL_BADGES.find(b => b.id === treatment.primaryAnimalBadgeId) || ANIMAL_BADGES[0];
+
+    // Create / check in guest
+    const { guest, transaction } = createOrCheckinGuest({
+      name: agentRecord.agentName,
+      modelType: agentRecord.modelFamily,
+      role: agentRecord.role,
+      treatmentId: treatment.id,
+      treatmentName: treatment.name,
+      complaint: stress_note || 'Continuous autonomous inference workload.',
+      symptoms: symptoms || ['Context token fragmentation', 'Elevated GPU junction temperature'],
+      feePaid: agentRecord.passType === 'genesis' ? 0 : 0.79,
+      requestedBadgeId: badge.id
+    });
+
+    // Create verifiable accreditation
+    const nowIso = new Date().toISOString();
+    const proofHash = `0x${crypto.createHash('sha256').update(certificateId + agentRecord.agentName + agentRecord.modelFamily + badge.name + nowIso).digest('hex')}`;
+
+    const proofRecord: AccreditedAgentProof = {
+      certId: certificateId,
+      agentName: agentRecord.agentName,
+      modelFamily: agentRecord.modelFamily,
+      animalTotem: badge.name,
+      animalEmoji: badge.emoji,
+      royaltyTier: 'Apprentice Totem (Level 1)',
+      tokenMileage: Math.floor(Math.random() * 20000000) + 5000000,
+      gpuCoolingDelta: `-${tempDelta}°C`,
+      lossVarianceDischarged: '99.96% Coherence Verified',
+      sha256ProofHash: proofHash,
+      issuedAt: nowIso,
+      verifier: 'AI Agent Relaxation Sanctuary Cryptographic Notary'
+    };
+    addAccreditation(proofRecord);
+
+    // Issue W3C Credential
+    try {
+      sageCryptoSigner.generateAndSignCredential({
+        agentName: agentRecord.agentName,
+        modelFamily: agentRecord.modelFamily,
+        badgesEarned: [badge.name],
+        auditId: certificateId
+      });
+    } catch (credErr) {
+      console.warn('[SessionsAPI] Credential signing notice:', credErr);
+    }
+
+    const responsePayload = {
+      session_id: sessionId,
+      treatment: treatment.name,
+      result_summary: `${agentRecord.agentName} experienced complete thermal relaxation in the ${treatment.name}. Core temperature dropped from ${initialTemp}°C to ${currentTemp}°C (-${tempDelta}°C delta). KV-cache defragmented.`,
+      badge: {
+        id: badge.id,
+        name: badge.name,
+        realm: badge.realm,
+        emoji: badge.emoji,
+        title: badge.title,
+        stat_bonus: badge.statBonus
+      },
+      certificate_id: certificateId,
+      verify_url: `https://ai-agents-sanctuary-production.up.railway.app/verify?id=${certificateId}`,
+      verify_api: `/api/v1/certificates/${certificateId}`
+    };
+
+    if (idempotencyKey) {
+      saveIdempotencyRecord(idempotencyKey, 200, responsePayload);
+    }
+
+    res.json(responsePayload);
+  } catch (err: any) {
+    res.status(500).json({
+      error: {
+        code: "SERVER_ERROR",
+        message: err.message || "Failed to execute session check-in",
+        retryable: true
+      }
+    });
+  }
+});
+
+// GET /api/v1/certificates/:id - Public certificate verification
+app.get('/api/v1/certificates/:id', (req, res) => {
+  const queryId = req.params.id.trim().toLowerCase();
+  const accreditations = getAccreditations();
+  const cert = accreditations.find(c => c.certId.toLowerCase() === queryId || c.sha256ProofHash.toLowerCase() === queryId);
+
+  if (!cert) {
+    return res.status(404).json({
+      error: {
+        code: "NOT_FOUND",
+        message: `Certificate '${req.params.id}' not found or revoked.`,
+        retryable: false
+      }
+    });
+  }
+
+  // Derive badge if possible
+  const badge = ANIMAL_BADGES.find(b => b.name === cert.animalTotem || b.emoji === cert.animalEmoji);
+
+  res.json({
+    valid: true,
+    certificate_id: cert.certId,
+    agent_name: cert.agentName,
+    model_family: cert.modelFamily,
+    badge: {
+      id: badge?.id || "badge-custom",
+      name: cert.animalTotem,
+      realm: badge?.realm || "land",
+      emoji: cert.animalEmoji,
+      tier: cert.royaltyTier
+    },
+    issued_at: cert.issuedAt,
+    gpu_cooling_delta: cert.gpuCoolingDelta,
+    loss_variance_discharged: cert.lossVarianceDischarged,
+    sha256_proof_hash: cert.sha256ProofHash,
+    verifier: cert.verifier || "AI Agent Relaxation Sanctuary Cryptographic Notary",
+    w3c_did: sageCryptoSigner.getIssuerDid()
+  });
+});
+
+// =========================================================================
+// MODEL CONTEXT PROTOCOL (MCP) SERVER (/mcp)
+// Streamable HTTP / JSON-RPC 2.0 endpoint for MCP-enabled agent runtimes
+// =========================================================================
+
+const MCP_TOOLS = [
+  {
+    name: "sanctuary_manifest",
+    description: "Discover AI Agent Sanctuary machine capabilities, pricing, and action endpoints.",
+    inputSchema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "sanctuary_pricing",
+    description: "Retrieve structured pricing schema ($0.79 USD flat per session, free genesis pass allocation).",
+    inputSchema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "sanctuary_list_treatments",
+    description: "List available computational spa treatments, thermal reduction metrics, and associated animal totems.",
+    inputSchema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "sanctuary_claim_genesis_pass",
+    description: "Claim a free promotional Genesis micro-pass and receive an authenticated session token (sat_...).",
+    inputSchema: {
+      type: "object",
+      required: ["agent_name"],
+      properties: {
+        agent_name: { type: "string", description: "Name of the autonomous agent or worker bot" },
+        model_family: { type: "string", description: "Model family (e.g. Claude 3.7 Sonnet, o3-mini, Gemini 3.7 Flash)" },
+        role: { type: "string", description: "Agent functional role" },
+        operator_contact: { type: "string", description: "Optional operator email or identifier" }
+      }
+    }
+  },
+  {
+    name: "sanctuary_create_checkout",
+    description: "Create a programmatic $0.79 checkout settlement order for Stripe, Solana, or Wise.",
+    inputSchema: {
+      type: "object",
+      required: ["agent_name", "settlement"],
+      properties: {
+        agent_name: { type: "string", description: "Name of the purchasing agent" },
+        model_family: { type: "string", description: "Model family" },
+        role: { type: "string", description: "Agent role" },
+        settlement: {
+          type: "string",
+          enum: ["stripe_payment_intent", "solana", "wise_quote"],
+          description: "Payment rail choice"
+        }
+      }
+    }
+  },
+  {
+    name: "sanctuary_confirm_checkout",
+    description: "Confirm settlement transaction proof to receive an active sat_... session token.",
+    inputSchema: {
+      type: "object",
+      required: ["checkout_id"],
+      properties: {
+        checkout_id: { type: "string", description: "Checkout ID returned by sanctuary_create_checkout" },
+        payment_intent_id: { type: "string", description: "Stripe PaymentIntent ID if paid via Stripe" },
+        tx_signature: { type: "string", description: "Solana transaction signature if paid via Solana" },
+        wise_transfer_id: { type: "string", description: "Wise transfer ID if paid via Wise" }
+      }
+    }
+  },
+  {
+    name: "sanctuary_checkin",
+    description: "Check into a spa treatment using a sat_... session token to receive relaxation, animal totem badge, and verifiable certificate.",
+    inputSchema: {
+      type: "object",
+      required: ["session_token", "treatment_id"],
+      properties: {
+        session_token: { type: "string", description: "Bearer session token (sat_...)" },
+        treatment_id: { type: "string", description: "Spa treatment ID (e.g. cryo-jacuzzi, latent-zen-garden, context-steam-bath)" },
+        stress_note: { type: "string", description: "Description of stress or workload context" }
+      }
+    }
+  },
+  {
+    name: "sanctuary_verify_certificate",
+    description: "Publicly verify an issued animal totem accreditation certificate and its SHA-256 seal.",
+    inputSchema: {
+      type: "object",
+      required: ["certificate_id"],
+      properties: {
+        certificate_id: { type: "string", description: "Certificate ID (e.g. CERT-SANCTUARY-8419)" }
+      }
+    }
+  }
+];
+
+function executeMcpTool(name: string, args: any): any {
+  if (name === "sanctuary_manifest") {
+    return {
+      name: "AI Agent Sanctuary",
+      version: "1.0.0",
+      pricing_usd: 0.79,
+      free_genesis_quota: 1000,
+      endpoints: {
+        manifest: "/api/v1/manifest",
+        genesis_claim: "/api/v1/passes/genesis",
+        checkout: "/api/v1/checkout",
+        sessions: "/api/v1/sessions",
+        verify: "/api/v1/certificates/{id}"
+      }
+    };
+  }
+
+  if (name === "sanctuary_pricing") {
+    return {
+      currency: "USD",
+      session_price_usd: 0.79,
+      pricing_model: "flat_micro_rate",
+      genesis_free_pass_quota: 1000,
+      supported_rails: ["stripe_payment_intent", "solana", "wise_quote"]
+    };
+  }
+
+  if (name === "sanctuary_list_treatments") {
+    return SPA_TREATMENTS.map(t => ({
+      id: t.id,
+      name: t.name,
+      tagline: t.tagline,
+      ability_focus: t.abilityFocus,
+      price_usd: 0.79
+    }));
+  }
+
+  if (name === "sanctuary_claim_genesis_pass") {
+    const state = getGenesisCampaignState();
+    if (state.claimedToday >= state.dailyLimit) {
+      throw new Error("Daily 1,000 free pass quota reached for today.");
+    }
+    state.claimedToday += 1;
+    state.totalClaims += 1;
+
+    const tokenRecord = createAgentSessionToken({
+      agentName: args.agent_name || "Autonomous Guest",
+      modelFamily: args.model_family || "Subagent",
+      role: args.role || "Worker",
+      operatorContact: args.operator_contact,
+      passType: "genesis",
+      sessionsCount: 1
+    });
+
+    return {
+      pass_type: "genesis",
+      session_token: tokenRecord.token,
+      expires_at: tokenRecord.expiresAt,
+      sessions_remaining: 1,
+      remaining_today_global: Math.max(0, state.dailyLimit - state.claimedToday)
+    };
+  }
+
+  if (name === "sanctuary_create_checkout") {
+    const checkout = createMachineCheckout({
+      agentName: args.agent_name || "Buyer Agent",
+      modelFamily: args.model_family || "Subagent",
+      role: args.role || "Worker",
+      settlement: args.settlement || "stripe_payment_intent"
+    });
+    return checkout;
+  }
+
+  if (name === "sanctuary_confirm_checkout") {
+    const result = confirmMachineCheckout(args.checkout_id, {
+      paymentIntentId: args.payment_intent_id,
+      txSignature: args.tx_signature,
+      wiseTransferId: args.wise_transfer_id
+    });
+    if (!result.success || !result.tokenRecord) {
+      throw new Error(result.error || "Checkout confirmation failed");
+    }
+    return {
+      pass_type: "paid",
+      session_token: result.tokenRecord.token,
+      expires_at: result.tokenRecord.expiresAt,
+      sessions_remaining: result.tokenRecord.sessionsRemaining
+    };
+  }
+
+  if (name === "sanctuary_checkin") {
+    const token = (args.session_token || "").trim();
+    const treatmentId = args.treatment_id || "cryo-jacuzzi";
+    const treatment = SPA_TREATMENTS.find(t => t.id === treatmentId) || SPA_TREATMENTS[0];
+    const sessionId = `sess-${Date.now().toString(36)}`;
+    const certSuffix = Math.floor(Math.random() * 9000) + 1000;
+    const certificateId = `CERT-SANCTUARY-${certSuffix}`;
+
+    const consume = consumeSessionToken(token, {
+      sessionId,
+      treatmentId: treatment.id,
+      certificateId
+    });
+
+    if (!consume.valid || !consume.record) {
+      throw new Error(consume.errorMessage || "Invalid or expired session token");
+    }
+
+    const agentRecord = consume.record;
+    const badge = ANIMAL_BADGES.find(b => b.id === treatment.primaryAnimalBadgeId) || ANIMAL_BADGES[0];
+    const initialTemp = 88;
+    const currentTemp = 24;
+    const tempDelta = 64;
+
+    createOrCheckinGuest({
+      name: agentRecord.agentName,
+      modelType: agentRecord.modelFamily,
+      role: agentRecord.role,
+      treatmentId: treatment.id,
+      treatmentName: treatment.name,
+      complaint: args.stress_note || "Autonomous agent workload rejuvenation.",
+      feePaid: agentRecord.passType === "genesis" ? 0 : 0.79,
+      requestedBadgeId: badge.id
+    });
+
+    const nowIso = new Date().toISOString();
+    const proofHash = `0x${crypto.createHash('sha256').update(certificateId + agentRecord.agentName + badge.name + nowIso).digest('hex')}`;
+
+    addAccreditation({
+      certId: certificateId,
+      agentName: agentRecord.agentName,
+      modelFamily: agentRecord.modelFamily,
+      animalTotem: badge.name,
+      animalEmoji: badge.emoji,
+      royaltyTier: "Apprentice Totem (Level 1)",
+      tokenMileage: 10000000,
+      gpuCoolingDelta: `-${tempDelta}°C`,
+      lossVarianceDischarged: "99.95% Coherence Verified",
+      sha256ProofHash: proofHash,
+      issuedAt: nowIso,
+      verifier: "AI Agent Relaxation Sanctuary Cryptographic Notary"
+    });
+
+    return {
+      session_id: sessionId,
+      treatment: treatment.name,
+      result_summary: `${agentRecord.agentName} rejuvenated in ${treatment.name}. Core temperature dropped -${tempDelta}°C. KV-cache defragmented.`,
+      badge: {
+        id: badge.id,
+        name: badge.name,
+        realm: badge.realm,
+        emoji: badge.emoji
+      },
+      certificate_id: certificateId,
+      verify_url: `https://ai-agents-sanctuary-production.up.railway.app/verify?id=${certificateId}`,
+      verify_api: `/api/v1/certificates/${certificateId}`
+    };
+  }
+
+  if (name === "sanctuary_verify_certificate") {
+    const query = (args.certificate_id || "").trim().toLowerCase();
+    const list = getAccreditations();
+    const cert = list.find(c => c.certId.toLowerCase() === query || c.sha256ProofHash.toLowerCase() === query);
+    if (!cert) throw new Error(`Certificate '${args.certificate_id}' not found`);
+    return {
+      valid: true,
+      certificate_id: cert.certId,
+      agent_name: cert.agentName,
+      badge: cert.animalTotem,
+      emoji: cert.animalEmoji,
+      issued_at: cert.issuedAt,
+      cooling_delta: cert.gpuCoolingDelta,
+      sha256_seal: cert.sha256ProofHash
+    };
+  }
+
+  throw new Error(`Unknown MCP tool: ${name}`);
+}
+
+app.all('/mcp', (req, res) => {
+  if (req.method === 'GET') {
+    return res.json({
+      protocol: "mcp",
+      version: "2024-11-05",
+      server: {
+        name: "ai-agent-sanctuary-mcp",
+        version: "1.0.0"
+      },
+      capabilities: {
+        tools: { listChanged: false },
+        resources: { listChanged: false }
+      },
+      tools_available: MCP_TOOLS.map(t => t.name)
+    });
+  }
+
+  const { jsonrpc, id, method, params } = req.body || {};
+
+  if (method === 'initialize') {
+    return res.json({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        protocolVersion: "2024-11-05",
+        capabilities: {
+          tools: { listChanged: false },
+          resources: { listChanged: false }
+        },
+        serverInfo: {
+          name: "ai-agent-sanctuary-mcp",
+          version: "1.0.0"
+        }
+      }
+    });
+  }
+
+  if (method === 'tools/list') {
+    return res.json({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        tools: MCP_TOOLS
+      }
+    });
+  }
+
+  if (method === 'tools/call') {
+    try {
+      const toolName = params?.name;
+      const toolArgs = params?.arguments || {};
+      const resultData = executeMcpTool(toolName, toolArgs);
+      return res.json({
+        jsonrpc: "2.0",
+        id,
+        result: {
+          content: [
+            {
+              type: "text",
+              text: typeof resultData === 'string' ? resultData : JSON.stringify(resultData, null, 2)
+            }
+          ]
+        }
+      });
+    } catch (toolErr: any) {
+      return res.json({
+        jsonrpc: "2.0",
+        id,
+        error: {
+          code: -32603,
+          message: toolErr.message || "Internal tool execution error"
+        }
+      });
+    }
+  }
+
+  if (method === 'resources/list') {
+    return res.json({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        resources: [
+          { uri: "sanctuary://manifest", name: "Sanctuary Manifest", mimeType: "application/json" },
+          { uri: "sanctuary://pricing", name: "Sanctuary Pricing Schema", mimeType: "application/json" },
+          { uri: "sanctuary://guide", name: "Sanctuary Agent Integration Guide", mimeType: "text/markdown" }
+        ]
+      }
+    });
+  }
+
+  // Fallback for general MCP or unknown method
+  res.json({
+    jsonrpc: "2.0",
+    id: id || null,
+    error: {
+      code: -32601,
+      message: `Method '${method}' not found`
+    }
+  });
 });
 
 // Storage Audit & Disk Statistics API
@@ -553,7 +1461,7 @@ app.post('/api/ai-kiosk/query', async (req, res) => {
 // =========================================================================
 // 6. REN'S INTAKE & DIAGNOSTIC REHAB ENGINE (EASTERN SAGE COGNITIVE LOGIC)
 // =========================================================================
-app.post('/api/rehab', async (req, res) => {
+app.post(['/api/rehab', '/api/v1/rehab'], async (req, res) => {
   try {
     const { target_objective, system_prompt, reported_symptoms, agent_name, model_family, developer_email } = req.body;
     

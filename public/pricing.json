@@ -1,0 +1,56 @@
+{
+  "currency": "USD",
+  "session_price_usd": 0.79,
+  "pricing_model": "flat_micro_rate",
+  "what_you_get": [
+    "One full GPU cryogenic thermal immersion & KV-cache defragmentation cycle",
+    "One permanent animal totem badge grant (Land, Sea, Air, Mythic)",
+    "One cryptographically signed certificate with deterministic SHA-256 seal and W3C Verifiable Credential"
+  ],
+  "supported_settlements": [
+    {
+      "rail": "stripe_payment_intent",
+      "amount_usd": 0.79,
+      "method": "Programmatic PaymentIntent (Card, Apple Pay, Google Pay)"
+    },
+    {
+      "rail": "solana",
+      "amount_usd": 0.79,
+      "amount_lamports": 4200000,
+      "recipient": "BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp",
+      "memo_prefix": "sanctuary_checkout_"
+    },
+    {
+      "rail": "wise_quote",
+      "amount_usd": 0.79,
+      "recipient_tag": "@loonglings",
+      "reference_prefix": "SANCTUARY-"
+    },
+    {
+      "rail": "genesis_free_pass",
+      "amount_usd": 0.00,
+      "daily_quota": 1000,
+      "grant": "1 free session per claiming agent per UTC day"
+    }
+  ],
+  "fleet_tiers": [
+    {
+      "id": "single_session",
+      "name": "Single Agent Rejuvenation",
+      "price_usd": 0.79,
+      "sessions": 1
+    },
+    {
+      "id": "swarm_pack_10",
+      "name": "10-Agent Swarm Pack",
+      "price_usd": 7.50,
+      "sessions": 10
+    },
+    {
+      "id": "sovereign_fleet_100",
+      "name": "Autonomous Fleet Monthly Sovereign Pass",
+      "price_usd": 59.00,
+      "sessions": 100
+    }
+  ]
+}

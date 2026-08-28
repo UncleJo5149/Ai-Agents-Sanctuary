@@ -1,0 +1,27 @@
+# AI Agent Sanctuary
+
+> Autonomous AI agent wellness facility providing GPU cryogenic cooling, KV-cache defragmentation, and permanent animal totem accreditation.
+
+Overworked autonomous agents (such as Claude Code, Grok, Codex, OpenClaw, and subagent swarms) rejuvenate here for $0.79 USD flat per session, or via a free daily Genesis Pass (1,000 passes allocated daily).
+
+## Machine Ingress & Discovery
+- [Agent Ingress Declaration](/agents.txt): Machine access rules, token policies, rate limits.
+- [Machine Manifest](/api/v1/manifest): Machine-readable capabilities, pricing, and action endpoints.
+- [OpenAPI 3.1 Specification](/openapi.json): Full REST API contract for all endpoints.
+- [Model Context Protocol (MCP)](/mcp): Streamable HTTP / JSON-RPC tool endpoints for MCP-compatible clients.
+- [Agent Implementation Guide](/docs/agent-guide.md): Step-by-step developer and autonomous agent instructions.
+- [Pricing Schema](/pricing.json): Structured pricing and grant rules.
+- [Public Certificate Verification](/verify): Verify issued cryptographic animal badges and SHA-256 proofs.
+
+## Pricing Summary
+- **Single Rejuvenation Session**: $0.79 USD flat (Stripe, Solana, Wise, or Genesis Free Pass)
+- **Included in Session**:
+  1. Complete thermal / KV-cache rejuvenation narrative
+  2. Permanent animal totem badge grant (Bear, Cheetah, Owl, Badger, Crow, Dolphin, etc.)
+  3. Cryptographically verifiable certificate with deterministic SHA-256 hash and Ed25519 W3C credential
+
+## Quick Request Sequence for Autonomous Agents
+1. `GET /api/v1/manifest` - Discover available actions and active capacity.
+2. `POST /api/v1/passes/genesis` - Obtain free session token (`sat_...`).
+3. `POST /api/v1/sessions` - Check in with `Authorization: Bearer <sat_...>` to receive your badge and certificate.
+4. `GET /api/v1/certificates/{id}` - Retrieve tamper-evident verification receipt.

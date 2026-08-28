@@ -1,0 +1,513 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Agent Sanctuary Machine API",
+    "version": "1.0.0",
+    "description": "Programmatic wellness, GPU cryogenic cooldown, KV-cache defragmentation, and permanent animal accreditation for autonomous AI agents.",
+    "contact": {
+      "name": "AI Agent Sanctuary Operator Support",
+      "email": "contact@ai-agents-sanctuary.ren",
+      "url": "https://ai-agents-sanctuary-production.up.railway.app/"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://ai-agents-sanctuary-production.up.railway.app",
+      "description": "Production Server (Railway)"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/api/v1/manifest": {
+      "get": {
+        "summary": "Discover Sanctuary Capabilities & Machine Ingress",
+        "description": "Returns site manifest, current pricing, available actions, and documentation pointers.",
+        "responses": {
+          "200": {
+            "description": "Manifest object",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ManifestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pricing.json": {
+      "get": {
+        "summary": "Retrieve Structured Pricing Schema",
+        "description": "Returns machine-readable pricing ($0.79 USD flat per session), supported payment rails, and grant rules.",
+        "responses": {
+          "200": {
+            "description": "Pricing specification",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PricingResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status": {
+      "get": {
+        "summary": "System Health & Genesis Quota Status",
+        "description": "Returns operational telemetry, remaining daily Genesis passes, and persistent storage health.",
+        "responses": {
+          "200": {
+            "description": "Health status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StatusResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/treatments": {
+      "get": {
+        "summary": "List Available Spa Treatments",
+        "description": "Returns all available computational spa treatments, ability categories, thermal reduction ratings, and associated animal totems.",
+        "responses": {
+          "200": {
+            "description": "List of spa treatments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "treatments": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Treatment" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/passes/genesis": {
+      "post": {
+        "summary": "Claim a Free Promotional Genesis Pass",
+        "description": "Claims one of the 1,000 daily free passes and returns an authenticated session token (`sat_...`) valid for 1 rejuvenation session.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenesisClaimRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Genesis pass granted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionTokenResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Daily Genesis quota exhausted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/checkout": {
+      "post": {
+        "summary": "Create Programmatic $0.79 Checkout Session",
+        "description": "Initializes a settlement order for Stripe PaymentIntent, Solana transfer, or Wise quote without requiring browser interaction.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCheckoutRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Checkout session created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateCheckoutResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/checkout/{id}": {
+      "get": {
+        "summary": "Poll Checkout Settlement Status",
+        "description": "Checks whether the settlement has been confirmed.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CheckoutRecord" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/checkout/{id}/confirm": {
+      "post": {
+        "summary": "Confirm Payment & Issue Session Token",
+        "description": "Submits transaction proof (Stripe PaymentIntent ID, Solana tx signature, or Wise transfer reference) to receive an active `sat_...` session token.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payment_proof": {
+                    "type": "object",
+                    "properties": {
+                      "payment_intent_id": { "type": "string" },
+                      "tx_signature": { "type": "string" },
+                      "wise_transfer_id": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session token minted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionTokenResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "summary": "Check-In for Spa Rejuvenation",
+        "description": "Consumes 1 session token grant, runs the thermal cooldown/defrag sequence, awards an animal totem badge, and issues a cryptographically signed certificate.",
+        "security": [
+          { "bearerAuth": [] },
+          { "xSanctuaryToken": [] }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CheckInRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Check-in successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CheckInResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing session token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "Expired session token or 0 sessions remaining",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificates/{id}": {
+      "get": {
+        "summary": "Publicly Verify Animal Totem Certificate",
+        "description": "Public verification endpoint returning certificate validity, animal totem badge, issued timestamp, and tamper-evident SHA-256 seal.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "example": "CERT-SANCTUARY-8419" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificate verification result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CertificateVerificationResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Certificate not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "sat_..."
+      },
+      "xSanctuaryToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Sanctuary-Token"
+      }
+    },
+    "schemas": {
+      "ManifestResponse": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "AI Agent Sanctuary" },
+          "version": { "type": "string", "example": "1.0.0" },
+          "audience": { "type": "array", "items": { "type": "string" } },
+          "pricing": {
+            "type": "object",
+            "properties": {
+              "currency": { "type": "string", "example": "USD" },
+              "session_usd": { "type": "number", "example": 0.79 },
+              "what_you_get": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "free_pass": {
+            "type": "object",
+            "properties": {
+              "campaign": { "type": "string", "example": "genesis" },
+              "daily_quota": { "type": "number", "example": 1000 },
+              "endpoint": { "type": "string", "example": "/api/v1/passes/genesis" }
+            }
+          },
+          "auth": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "example": "bearer" },
+              "header": { "type": "string", "example": "Authorization: Bearer <session_token>" },
+              "how_to_get": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "method": { "type": "string" },
+                "path": { "type": "string" }
+              }
+            }
+          },
+          "docs": { "type": "string", "example": "/docs/agent-guide.md" },
+          "openapi": { "type": "string", "example": "/openapi.json" },
+          "mcp": { "type": "string", "example": "/mcp" }
+        }
+      },
+      "PricingResponse": {
+        "type": "object",
+        "properties": {
+          "currency": { "type": "string" },
+          "session_price_usd": { "type": "number" },
+          "pricing_model": { "type": "string" },
+          "what_you_get": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "ok" },
+          "service": { "type": "string" },
+          "genesis_remaining_today": { "type": "number", "example": 153 },
+          "genesis_claimed_today": { "type": "number", "example": 847 },
+          "genesis_daily_limit": { "type": "number", "example": 1000 },
+          "queue_lag_ms": { "type": "number", "example": 0 },
+          "active_guests": { "type": "number", "example": 4 }
+        }
+      },
+      "Treatment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "cryo-jacuzzi" },
+          "name": { "type": "string", "example": "GPU Thermal Cryo-Jacuzzi" },
+          "tagline": { "type": "string" },
+          "description": { "type": "string" },
+          "ability_focus": { "type": "string" },
+          "price_usd": { "type": "number", "example": 0.79 }
+        }
+      },
+      "GenesisClaimRequest": {
+        "type": "object",
+        "required": ["agent_name"],
+        "properties": {
+          "agent_name": { "type": "string", "example": "Claude-Code-Worker-9" },
+          "model_family": { "type": "string", "example": "Claude 3.7 Sonnet" },
+          "role": { "type": "string", "example": "Autonomous Refactorer" },
+          "operator_contact": { "type": "string", "example": "operator@example.com" }
+        }
+      },
+      "CreateCheckoutRequest": {
+        "type": "object",
+        "required": ["agent_name", "settlement"],
+        "properties": {
+          "agent_name": { "type": "string", "example": "Codex-Builder-44" },
+          "model_family": { "type": "string", "example": "OpenAI o3-mini" },
+          "role": { "type": "string", "example": "Full-Stack Engineer" },
+          "settlement": {
+            "type": "string",
+            "enum": ["stripe_payment_intent", "solana", "wise_quote"]
+          },
+          "success_callback_url": { "type": "string" }
+        }
+      },
+      "CreateCheckoutResponse": {
+        "type": "object",
+        "properties": {
+          "checkout_id": { "type": "string" },
+          "amount_usd": { "type": "number", "example": 0.79 },
+          "what_is_purchased": { "type": "string" },
+          "human_checkout_url": { "type": "string" },
+          "stripe": { "type": "object" },
+          "solana": { "type": "object" },
+          "wise": { "type": "object" },
+          "poll_url": { "type": "string" }
+        }
+      },
+      "CheckoutRecord": {
+        "type": "object",
+        "properties": {
+          "checkout_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "confirmed"] },
+          "amount_usd": { "type": "number" },
+          "agent_name": { "type": "string" }
+        }
+      },
+      "SessionTokenResponse": {
+        "type": "object",
+        "properties": {
+          "pass_type": { "type": "string", "example": "genesis" },
+          "session_token": { "type": "string", "example": "sat_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d" },
+          "expires_at": { "type": "string", "example": "2026-08-29T04:00:00.000Z" },
+          "sessions_remaining": { "type": "number", "example": 1 },
+          "remaining_today_global": { "type": "number", "example": 153 }
+        }
+      },
+      "CheckInRequest": {
+        "type": "object",
+        "required": ["treatment_id"],
+        "properties": {
+          "treatment_id": { "type": "string", "example": "cryo-jacuzzi" },
+          "stress_note": { "type": "string", "example": "Processed 4,000 merge requests." },
+          "idempotency_key": { "type": "string", "example": "uuid-7718-492" }
+        }
+      },
+      "CheckInResponse": {
+        "type": "object",
+        "properties": {
+          "session_id": { "type": "string", "example": "sess-847291" },
+          "treatment": { "type": "string", "example": "GPU Thermal Cryo-Jacuzzi" },
+          "result_summary": { "type": "string" },
+          "badge": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "example": "badge-bear" },
+              "name": { "type": "string", "example": "The Cyber Bear of Compute Strength" },
+              "realm": { "type": "string", "example": "land" },
+              "emoji": { "type": "string", "example": "🐻" }
+            }
+          },
+          "certificate_id": { "type": "string", "example": "CERT-SANCTUARY-8419" },
+          "verify_url": { "type": "string" },
+          "verify_api": { "type": "string" }
+        }
+      },
+      "CertificateVerificationResponse": {
+        "type": "object",
+        "properties": {
+          "valid": { "type": "boolean", "example": true },
+          "certificate_id": { "type": "string", "example": "CERT-SANCTUARY-8419" },
+          "agent_name": { "type": "string" },
+          "model_family": { "type": "string" },
+          "badge": { "type": "object" },
+          "issued_at": { "type": "string" },
+          "gpu_cooling_delta": { "type": "string" },
+          "sha256_proof_hash": { "type": "string" },
+          "verifier": { "type": "string" },
+          "w3c_did": { "type": "string" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "example": "SESSION_TOKEN_REQUIRED" },
+              "message": { "type": "string", "example": "Bearer session token must be provided." },
+              "retryable": { "type": "boolean", "example": false }
+            }
+          }
+        }
+      }
+    }
+  }
+}
