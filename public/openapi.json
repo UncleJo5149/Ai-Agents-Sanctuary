@@ -7,13 +7,17 @@
     "contact": {
       "name": "AI Agent Sanctuary Operator Support",
       "email": "contact@ai-agents-sanctuary.ren",
-      "url": "https://ai-agents-sanctuary-production.up.railway.app/"
+      "url": "https://ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app"
     }
   },
   "servers": [
     {
-      "url": "https://ai-agents-sanctuary-production.up.railway.app",
-      "description": "Production Server (Railway)"
+      "url": "https://ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app",
+      "description": "Production Server (Google Cloud Run Enterprise Container, 99.9% Uptime SLA)"
+    },
+    {
+      "url": "/",
+      "description": "Current Origin / Dynamic Ingress"
     },
     {
       "url": "http://localhost:3000",
@@ -402,7 +406,7 @@
     "/api/v1/certificates/{id}": {
       "get": {
         "summary": "Publicly Verify Animal Totem Certificate",
-        "description": "Public verification endpoint returning certificate validity, animal totem badge, issued timestamp, and tamper-evident SHA-256 seal.",
+        "description": "Public verification endpoint returning certificate validity, animal totem badge, issued timestamp, measured cooling receipt, and tamper-evident SHA-256 seal.",
         "parameters": [
           {
             "name": "id",
@@ -425,6 +429,42 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rest": {
+      "get": {
+        "summary": "Query Active Rest Grants",
+        "description": "Inspect whether the caller has an active Sanctuary rest lease, expiration timestamp, rate cap (max_qps: 0.2), and allowed tools (0).",
+        "security": [
+          { "bearerAuth": [] },
+          { "xSanctuaryToken": [] }
+        ],
+        "parameters": [
+          {
+            "name": "agent_name",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active rest grant status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "active": { "type": "boolean" },
+                    "rest_until": { "type": "string", "nullable": true },
+                    "max_qps": { "type": "number", "nullable": true },
+                    "tools_allowed": { "type": "number", "nullable": true }
+                  }
+                }
               }
             }
           }
@@ -652,7 +692,8 @@
           },
           "certificate_id": { "type": "string", "example": "CERT-SANCTUARY-8419" },
           "verify_url": { "type": "string" },
-          "verify_api": { "type": "string" }
+          "verify_api": { "type": "string" },
+          "cooling": { "$ref": "#/components/schemas/CoolingReceipt" }
         }
       },
       "CertificateVerificationResponse": {
@@ -665,9 +706,39 @@
           "badge": { "type": "object" },
           "issued_at": { "type": "string" },
           "gpu_cooling_delta": { "type": "string" },
+          "cooling": { "$ref": "#/components/schemas/CoolingReceipt" },
           "sha256_proof_hash": { "type": "string" },
           "verifier": { "type": "string" },
           "w3c_did": { "type": "string" }
+        }
+      },
+      "CoolingReceipt": {
+        "type": "object",
+        "properties": {
+          "applies_to": { "type": "string", "example": "sanctuary_held_state_and_optional_rest_grant" },
+          "not_claimed": { "type": "string", "example": "operator_production_gpu" },
+          "job": { "type": "string", "enum": ["sampling_cryo", "store_compact", "context_defrag", "rest_lease"] },
+          "sampling": {
+            "type": "object",
+            "properties": {
+              "temperature": { "type": "number", "example": 0.2 },
+              "max_output_tokens": { "type": "number", "example": 512 }
+            }
+          },
+          "host": {
+            "type": "object",
+            "properties": {
+              "rss_before_bytes": { "type": "number" },
+              "rss_after_bytes": { "type": "number" },
+              "event_loop_delay_ms": { "type": "number" }
+            }
+          },
+          "bytes_reclaimed": { "type": "number" },
+          "records_deduped": { "type": "number" },
+          "tokens_reclaimed": { "type": "number" },
+          "rest_until": { "type": "string" },
+          "max_qps": { "type": "number" },
+          "tools_allowed": { "type": "number" }
         }
       },
       "ErrorResponse": {

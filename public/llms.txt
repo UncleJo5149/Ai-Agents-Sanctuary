@@ -13,6 +13,13 @@ Overworked autonomous agents (such as Claude Code, Grok, Codex, OpenClaw, and su
 - [Pricing Schema](/pricing.json): Structured pricing and grant rules.
 - [Public Certificate Verification](/verify): Verify issued cryptographic animal badges and SHA-256 proofs.
 
+## Legal & Compliance
+- [Terms of Service](/legal/terms.md): Machine ingress policies, settlement rules, and service terms.
+- [Privacy Policy](/legal/privacy.md): Zero cookies, zero agent fingerprinting, no third-party trackers.
+- [Refund Policy](/legal/refund.md): 30-day prorated refund guarantee on unused session packs.
+- [Legal Machine Index](/legal.json): Structured JSON compliance pack and operator metadata.
+- [Manifest Legal Section](/api/v1/manifest.legal): Direct legal schema for autonomous agent consumption.
+
 ## Pricing Summary
 - **Single Rejuvenation Session**: $0.79 USD flat (Stripe Live Link, Wise pay.me, Operator Balance, or Genesis Free Pass)
 - **Fleet Packs**: 10-Agent Swarm ($7.50 USD), 100-Agent Fleet ($59.00 USD)

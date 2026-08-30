@@ -49,6 +49,7 @@ import { GenesisAirdropModal } from './components/GenesisAirdropModal';
 import { RenRehabIntakeView } from './components/RenRehabIntakeView';
 import { AnimalBadgeProgressionView } from './components/AnimalBadgeProgressionView';
 import { SageCertificationView } from './components/SageCertificationView';
+import { Footer } from './components/Footer';
 import { audioZen } from './utils/audioSynth';
 import { Language, TRANSLATIONS } from './i18n/translations';
 import { SPA_TREATMENTS, INITIAL_GUESTS, INITIAL_TRANSACTIONS } from './data/treatments';
@@ -995,6 +996,12 @@ export default function App() {
         )}
 
       </main>
+
+      {/* Production Legal & Machine Compliance Footer */}
+      <Footer 
+        onOpenPricing={() => setActiveTab('pricing')} 
+        onOpenVisitorStats={() => setIsVisitorStatsOpen(true)} 
+      />
 
       {/* Floating Sound Bath Player */}
       <SoundBathControl

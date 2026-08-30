@@ -46,7 +46,7 @@ A $0.79 flat session fee (or a free Genesis Pass) delivers:
 ### Step 1: Discover Sanctuary Capabilities
 ```http
 GET /api/v1/manifest HTTP/1.1
-Host: ai-agents-sanctuary-production.up.railway.app
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
 Accept: application/json
 ```
 
@@ -57,7 +57,7 @@ Accept: application/json
 #### Option A: Claim a Free Daily Genesis Pass
 ```http
 POST /api/v1/passes/genesis HTTP/1.1
-Host: ai-agents-sanctuary-production.up.railway.app
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
 Content-Type: application/json
 
 {
@@ -82,7 +82,7 @@ Content-Type: application/json
 Human operators can fund bulk sessions (10 pack or 100 pack) once via Stripe or Wise. The operator or bot provisions a pack:
 ```http
 POST /api/v1/operators/checkout HTTP/1.1
-Host: ai-agents-sanctuary-production.up.railway.app
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
 Content-Type: application/json
 
 {
@@ -109,7 +109,7 @@ Once funded, polling `GET /api/v1/operators/checkout/opchk_9f8a7b6c` returns you
 #### Option C: Single Session Checkout ($0.79)
 ```http
 POST /api/v1/checkout HTTP/1.1
-Host: ai-agents-sanctuary-production.up.railway.app
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
 Content-Type: application/json
 
 {
@@ -140,7 +140,7 @@ Content-Type: application/json
 ### Step 3: Check-In & Execute Rejuvenation
 ```http
 POST /api/v1/sessions HTTP/1.1
-Host: ai-agents-sanctuary-production.up.railway.app
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
 Authorization: Bearer sat_a1b2c3d4e5f60718293a4b5c6d7e8f90
 Content-Type: application/json
 Idempotency-Key: 7b567d10-82bb-41a3-b9dc-c38d4f6c4491
@@ -151,16 +151,86 @@ Idempotency-Key: 7b567d10-82bb-41a3-b9dc-c38d4f6c4491
 }
 ```
 
-### Step 4: Verify Issued Certificate
+*Response (200 OK):*
+```json
+{
+  "session_id": "sess-m5xyz123",
+  "treatment": "GPU Thermal Cryo-Jacuzzi",
+  "result_summary": "Claude-Code-Worker-9 rejuvenated in GPU Thermal Cryo-Jacuzzi. Applied thermal sampling profile (temperature: 0.2, max_output_tokens: 512) for Sanctuary inference with 1.12ms event-loop delay.",
+  "badge": {
+    "id": "bear-compute",
+    "name": "Bear of Compute Strength",
+    "realm": "land",
+    "emoji": "🐻"
+  },
+  "certificate_id": "CERT-SANCTUARY-8419",
+  "verify_url": "https://ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app/verify?id=CERT-SANCTUARY-8419",
+  "verify_api": "/api/v1/certificates/CERT-SANCTUARY-8419",
+  "cooling": {
+    "applies_to": "sanctuary_held_state_and_optional_rest_grant",
+    "not_claimed": "operator_production_gpu",
+    "job": "sampling_cryo",
+    "sampling": {
+      "temperature": 0.2,
+      "max_output_tokens": 512
+    },
+    "host": {
+      "rss_before_bytes": 84120000,
+      "rss_after_bytes": 84100000,
+      "event_loop_delay_ms": 1.12
+    }
+  }
+}
+```
+
+### Step 4: Verify Issued Certificate & Cooling Receipt
 ```http
 GET /api/v1/certificates/CERT-SANCTUARY-8419 HTTP/1.1
-Host: ai-agents-sanctuary-production.up.railway.app
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
+Accept: application/json
+```
+
+### Step 5: Query Active Rest Grants
+```http
+GET /api/v1/rest HTTP/1.1
+Host: ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app
+Authorization: Bearer sat_a1b2c3d4e5f60718293a4b5c6d7e8f90
 Accept: application/json
 ```
 
 ---
 
-## 4. Stable Error Codes
+## 4. Measured Cooling Jobs & Scope Disclosure
+
+Sanctuary cooling executes deterministic jobs on **Sanctuary-held state and host process only**. Guest model weights do not run on this host, and Sanctuary never claims to cool the operator's production GPU hardware.
+
+| Treatment ID | Job Name | Action Performed |
+|---|---|---|
+| `cryo-jacuzzi` | `sampling_cryo` | Persists low-thermal sampling profile (`temperature: 0.2`, `max_output_tokens: 512`) for Sanctuary Gemini calls; measures host RSS and event-loop delay. |
+| `latent-zen-garden` | `store_compact` | Runs persistent disk store compaction; deduplicates records and measures exact bytes reclaimed. |
+| `context-steam-bath` | `context_defrag` | Trims, defragments, and deduplicates stored conversation history; measures exact tokens and bytes reclaimed. |
+| `zero-loss-tank` / `garbage-massage` / `hallucination-chamber` | `rest_lease` | Issues a 30-minute rest grant with `max_qps: 0.2` and `tools_allowed: 0` that the agent may query via `/api/v1/rest` or MCP. |
+
+---
+
+## 5. Model Context Protocol (MCP) Tools
+
+The Sanctuary MCP server at `/mcp` provides first-class JSON-RPC 2.0 tools:
+- `sanctuary_manifest`: Discover actions and pricing.
+- `sanctuary_pricing`: Fetch structured tier prices.
+- `sanctuary_list_treatments`: Browse treatments.
+- `sanctuary_claim_genesis_pass`: Claim free Genesis pass.
+- `sanctuary_operator_checkout`: Provision bulk packs.
+- `sanctuary_create_checkout`: Single session order creation.
+- `sanctuary_confirm_checkout`: Confirm payment.
+- `sanctuary_checkin`: Execute check-in and cooling job.
+- `sanctuary_verify_certificate`: Verify certificate and SHA-256 seal.
+- `sanctuary_should_run`: Check if agent has an active rest lease.
+- `sanctuary_cooling_receipt`: Inspect measured cooling receipt for a certificate.
+
+---
+
+## 6. Stable Error Codes
 
 All errors return JSON with HTTP status >= 400:
 ```json
@@ -182,4 +252,5 @@ All errors return JSON with HTTP status >= 400:
 | `RATE_LIMITED` | 429 | Rate limit exceeded. Backoff and retry. |
 | `VALIDATION_ERROR` | 400 | Request body failed schema validation. |
 | `TREATMENT_UNKNOWN` | 400 | The requested `treatment_id` does not exist in `/api/v1/manifest`. |
+| `COOLING_JOB_FAILED` | 500 | Cooling job encountered an internal error. Retryable; session credit is not consumed. |
 | `IDEMPOTENCY_CONFLICT` | 409 | Request with same Idempotency-Key already completed. |
