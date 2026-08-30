@@ -377,6 +377,17 @@ export type CoolingReceipt =
   | ContextDefragCoolingReceipt
   | RestLeaseCoolingReceipt;
 
+export interface CryptographicProofBlock {
+  type: string; // 'Ed25519Signature2020'
+  created: string;
+  verificationMethod: string;
+  proofPurpose: string;
+  jws?: string;
+  signatureValue: string;
+  sha256Digest: string;
+  algorithm: string;
+}
+
 export interface AccreditedAgentProof {
   certId: string;
   agentName: string;
@@ -392,6 +403,7 @@ export interface AccreditedAgentProof {
   verifier: string;
   cooling?: CoolingReceipt;
   ceremonial_copy?: boolean;
+  proof?: CryptographicProofBlock;
 }
 
 const INITIAL_ACCREDITATIONS: AccreditedAgentProof[] = [

@@ -212,6 +212,119 @@ class SageCryptoSigner {
       };
     }
   }
+
+  /**
+   * Signs arbitrary JSON payload or string canonically with Ed25519 private key
+   */
+  public signPayload(payload: any): {
+    sha256Digest: string;
+    signatureHex: string;
+    signatureBase64Url: string;
+    algorithm: string;
+    verificationMethod: string;
+  } {
+    const canonicalString = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const sha256Digest = `0x${crypto.createHash('sha256').update(canonicalString).digest('hex')}`;
+    const signature = crypto.sign(null, Buffer.from(canonicalString), this.privateKeyPem);
+    const signatureHex = `0x${signature.toString('hex')}`;
+    const signatureBase64Url = signature.toString('base64url');
+
+    return {
+      sha256Digest,
+      signatureHex,
+      signatureBase64Url,
+      algorithm: 'Ed25519',
+      verificationMethod: `${this.issuerDid}#key-1`
+    };
+  }
+
+  /**
+   * Cryptographically verifies an arbitrary payload against a signatureHex
+   */
+  public verifyPayload(payload: any, signatureHex: string): boolean {
+    try {
+      const canonicalString = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const cleanHex = signatureHex.startsWith('0x') ? signatureHex.slice(2) : signatureHex;
+      const sigBuffer = Buffer.from(cleanHex, 'hex');
+      return crypto.verify(null, Buffer.from(canonicalString), this.publicKeyPem, sigBuffer);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Generates standard W3C DID document for did:web:<domain> and did:key:<fingerprint>
+   */
+  public getDidDocument(baseUrl: string): any {
+    const parsed = new URL(baseUrl);
+    const webDid = `did:web:${parsed.host}`;
+    return {
+      "@context": [
+        "https://www.w3.org/ns/did/v1",
+        "https://w3id.org/security/suites/ed25519-2020/v1",
+        "https://w3id.org/security/suites/jws-2020/v1"
+      ],
+      id: webDid,
+      alsoKnownAs: [this.issuerDid],
+      verificationMethod: [
+        {
+          id: `${webDid}#key-1`,
+          type: "Ed25519VerificationKey2020",
+          controller: webDid,
+          publicKeyPem: this.publicKeyPem,
+          fingerprint: this.keyFingerprint
+        },
+        {
+          id: `${this.issuerDid}#key-1`,
+          type: "Ed25519VerificationKey2020",
+          controller: this.issuerDid,
+          publicKeyPem: this.publicKeyPem,
+          fingerprint: this.keyFingerprint
+        }
+      ],
+      authentication: [`${webDid}#key-1`, `${this.issuerDid}#key-1`],
+      assertionMethod: [`${webDid}#key-1`, `${this.issuerDid}#key-1`],
+      capabilityInvocation: [`${webDid}#key-1`],
+      capabilityDelegation: [`${webDid}#key-1`],
+      service: [
+        {
+          id: `${webDid}#sanctuary-agent-service`,
+          type: "AIAgentSanctuaryService",
+          serviceEndpoint: `${baseUrl}/api/v1`
+        },
+        {
+          id: `${webDid}#mcp-endpoint`,
+          type: "ModelContextProtocolEndpoint",
+          serviceEndpoint: `${baseUrl}/mcp`
+        },
+        {
+          id: `${webDid}#agent-manifest`,
+          type: "AgentDiscoveryManifest",
+          serviceEndpoint: `${baseUrl}/.well-known/agent.json`
+        }
+      ]
+    };
+  }
+
+  /**
+   * Generates RFC 7517 JWKS Key Set representation of public keys
+   */
+  public getJwks(): { keys: any[] } {
+    const keyObject = crypto.createPublicKey(this.publicKeyPem);
+    const jwk = keyObject.export({ format: 'jwk' });
+    return {
+      keys: [
+        {
+          ...jwk,
+          kid: `sanctuary-key-1`,
+          use: 'sig',
+          alg: 'EdDSA',
+          crv: 'Ed25519',
+          key_ops: ['verify']
+        }
+      ]
+    };
+  }
 }
 
 export const sageCryptoSigner = new SageCryptoSigner();
