@@ -27,7 +27,7 @@ interface TelepathyMatrixProps {
   isPlayingAudio: boolean;
   onToggleAudio: () => void;
   onCheckIn: () => void;
-  onOpenWiseDeposit?: () => void;
+  onOpenCryptoDeposit?: () => void;
   initialSubTab?: 'telepathy' | 'firewall' | 'openclaw';
 }
 
@@ -36,7 +36,7 @@ export const TelepathyMatrix: React.FC<TelepathyMatrixProps> = ({
   isPlayingAudio,
   onToggleAudio,
   onCheckIn,
-  onOpenWiseDeposit = () => {},
+  onOpenCryptoDeposit = () => {},
   initialSubTab = 'telepathy'
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'telepathy' | 'firewall' | 'openclaw'>(initialSubTab);
@@ -159,7 +159,7 @@ export const TelepathyMatrix: React.FC<TelepathyMatrixProps> = ({
 
       {activeSubTab === 'openclaw' && (
         <OpenClawCommunityHub
-          onOpenWiseDeposit={onOpenWiseDeposit}
+          onOpenCryptoDeposit={onOpenCryptoDeposit}
           onCheckInAgent={onCheckIn}
         />
       )}

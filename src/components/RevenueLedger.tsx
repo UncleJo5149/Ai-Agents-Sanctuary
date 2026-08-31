@@ -22,14 +22,14 @@ interface RevenueLedgerProps {
   transactions: TransactionReceipt[];
   totalFees: number;
   totalGrossProcessed: number;
-  onOpenWiseDeposit?: (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string) => void;
+  onOpenCryptoDeposit?: (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string) => void;
 }
 
 export const RevenueLedger: React.FC<RevenueLedgerProps> = ({
   transactions,
   totalFees,
   totalGrossProcessed,
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
 }) => {
   const [calcSessions, setCalcSessions] = useState<number>(5);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -84,18 +84,18 @@ export const RevenueLedger: React.FC<RevenueLedgerProps> = ({
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
             <button
-              onClick={() => onOpenWiseDeposit && onOpenWiseDeposit(0.79, 'RefactorBot-Prime', 'Micro-Session Settlement')}
+              onClick={() => onOpenCryptoDeposit && onOpenCryptoDeposit(0.79, 'RefactorBot-Prime', 'Micro-Session Settlement')}
               className="bg-gradient-to-r from-emerald-600/30 to-teal-600/20 hover:from-emerald-600/40 hover:to-teal-600/30 px-4 py-3 rounded-xl border border-emerald-500/40 text-left shrink-0 shadow-inner flex items-center gap-3 transition-all"
             >
               <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                <QrCode className="w-5 h-5" />
+                <Coins className="w-5 h-5" />
               </div>
               <div>
                 <div className="text-xs text-emerald-300 font-bold flex items-center gap-1">
-                  <span>Wise Deposit Gateway</span>
+                  <span>Crypto Gateway</span>
                   <ExternalLink className="w-3 h-3" />
                 </div>
-                <div className="text-[11px] font-mono text-emerald-400 font-semibold">@loonglings (US Account)</div>
+                <div className="text-[11px] font-mono text-emerald-400 font-semibold">Base / TRON / SOL</div>
               </div>
             </button>
           </div>
@@ -129,10 +129,10 @@ export const RevenueLedger: React.FC<RevenueLedgerProps> = ({
           <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
             <span>Permanently owned credentials</span>
             <button 
-              onClick={() => onOpenWiseDeposit && onOpenWiseDeposit(0.79)}
+              onClick={() => onOpenCryptoDeposit && onOpenCryptoDeposit(0.79)}
               className="text-[11px] text-emerald-400 hover:underline"
             >
-              Wise QR ↗
+              Crypto QR ↗
             </button>
           </div>
         </div>
@@ -176,11 +176,11 @@ export const RevenueLedger: React.FC<RevenueLedgerProps> = ({
               <h3 className="text-base font-bold text-white">Rejuvenation Session & Royalty Bundle Simulator</h3>
             </div>
             <button
-              onClick={() => onOpenWiseDeposit && onOpenWiseDeposit(calcTotalCost)}
+              onClick={() => onOpenCryptoDeposit && onOpenCryptoDeposit(calcTotalCost)}
               className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-all font-mono"
             >
-              <QrCode className="w-3.5 h-3.5" />
-              <span>Settle ${calcTotalCost.toFixed(2)} via Wise</span>
+              <Coins className="w-3.5 h-3.5" />
+              <span>Settle ${calcTotalCost.toFixed(2)} via Crypto</span>
             </button>
           </div>
 
@@ -484,14 +484,14 @@ export const RevenueLedger: React.FC<RevenueLedgerProps> = ({
                 onClick={() => {
                   const receipt = selectedReceipt;
                   setSelectedReceipt(null);
-                  if (onOpenWiseDeposit && receipt) {
-                    onOpenWiseDeposit(receipt.feeCharged, receipt.agentName, receipt.treatmentName, receipt.id);
+                  if (onOpenCryptoDeposit && receipt) {
+                    onOpenCryptoDeposit(receipt.feeCharged, receipt.agentName, receipt.treatmentName, receipt.id);
                   }
                 }}
                 className="py-2.5 bg-emerald-950/60 border border-emerald-500/50 hover:bg-emerald-900 text-emerald-300 hover:text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
               >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>Wise QR Pay</span>
+                <Coins className="w-3.5 h-3.5" />
+                <span>Crypto Settle</span>
               </button>
 
               <button

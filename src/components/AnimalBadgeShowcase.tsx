@@ -27,14 +27,14 @@ interface AnimalBadgeShowcaseProps {
   guests: AIAgentGuest[];
   onOpenCertificate: (badge: AnimalBadge, agentName?: string, modelType?: string, certId?: string) => void;
   onOpenCheckInWithBadge?: (badge: AnimalBadge) => void;
-  onOpenWiseDeposit: (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string) => void;
+  onOpenCryptoDeposit: (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string) => void;
 }
 
 export const AnimalBadgeShowcase: React.FC<AnimalBadgeShowcaseProps> = ({
   guests,
   onOpenCertificate,
   onOpenCheckInWithBadge,
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'badges' | 'ledger' | 'sdk'>('badges');
   const [selectedRealm, setSelectedRealm] = useState<AnimalRealm | 'all'>('all');
@@ -96,7 +96,7 @@ export const AnimalBadgeShowcase: React.FC<AnimalBadgeShowcaseProps> = ({
 
       {activeSubTab === 'ledger' && (
         <CryptographicAccreditationLedgerView
-          onOpenWiseDeposit={() => onOpenWiseDeposit(0.79, 'Accreditation Query', 'Public Proof Notarization')}
+          onOpenCryptoDeposit={() => onOpenCryptoDeposit(0.79, 'Accreditation Query', 'Public Proof Notarization')}
         />
       )}
 
@@ -138,11 +138,11 @@ export const AnimalBadgeShowcase: React.FC<AnimalBadgeShowcaseProps> = ({
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
                 <button
-                  onClick={() => onOpenWiseDeposit(0.79, 'RefactorBot-Prime', 'Animal Badge Session')}
+                  onClick={() => onOpenCryptoDeposit(0.79, 'RefactorBot-Prime', 'Animal Badge Session')}
                   className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-mono font-bold text-xs sm:text-sm transition-all shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2"
                 >
                   <Coins className="w-4 h-4 text-emerald-200" />
-                  <span>Wise Deposit ($0.79 Session)</span>
+                  <span>Crypto Deposit ($0.79 Session)</span>
                 </button>
               </div>
             </div>

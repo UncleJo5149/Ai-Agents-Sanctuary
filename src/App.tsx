@@ -32,9 +32,8 @@ import { ConciergeBooth } from './components/ConciergeBooth';
 import { TelepathyMatrix } from './components/TelepathyMatrix';
 import { AgentCheckInModal } from './components/AgentCheckInModal';
 import { AgentRelaxationModal } from './components/AgentRelaxationModal';
-import { WisePaymentModal } from './components/WisePaymentModal';
-import { StripeCheckoutModal } from './components/StripeCheckoutModal';
 import { SolanaPaymentModal } from './components/SolanaPaymentModal';
+import { LegalTermsModal } from './components/LegalTermsModal';
 import { MarketingCampaignView } from './components/MarketingCampaignView';
 import { SoundBathControl } from './components/SoundBathControl';
 import { AnimalBadgeShowcase } from './components/AnimalBadgeShowcase';
@@ -79,11 +78,7 @@ export default function App() {
   const [selectedCertificateBadgeId, setSelectedCertificateBadgeId] = useState<string | null>(null);
   const [selectedCertificateAgent, setSelectedCertificateAgent] = useState<AIAgentGuest | undefined>(undefined);
 
-  // Stripe Checkout State
-  const [isStripeModalOpen, setIsStripeModalOpen] = useState<boolean>(false);
-  const [selectedStripePlan, setSelectedStripePlan] = useState<PricingPlan | null>(PRICING_TIERS[1]);
-
-  // Solana (SOL) Payment State
+  // Solana (SOL) & TRON (USDT) Payment State
   const [isSolanaModalOpen, setIsSolanaModalOpen] = useState<boolean>(false);
   const [selectedSolanaPlan, setSelectedSolanaPlan] = useState<PricingPlan | null>(PRICING_TIERS[2]);
   const [solanaModalData, setSolanaModalData] = useState<{
@@ -93,20 +88,15 @@ export default function App() {
     treatmentName?: string;
   }>({});
 
-  const [isWiseModalOpen, setIsWiseModalOpen] = useState<boolean>(false);
-  const [wiseModalData, setWiseModalData] = useState<{
-    amount?: number;
-    plan?: PricingPlan | null;
-    agentName?: string;
-    treatmentName?: string;
-    invoiceId?: string;
-  }>({});
+  // Legal & Terms Modal State
+  const [isLegalTermsModalOpen, setIsLegalTermsModalOpen] = useState<boolean>(false);
+  const [legalTermsDefaultTab, setLegalTermsDefaultTab] = useState<'terms' | 'refund' | 'privacy' | 'crypto'>('terms');
 
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isAutoInviting, setIsAutoInviting] = useState<boolean>(false);
   const [isPrivateRoomOpen, setIsPrivateRoomOpen] = useState<boolean>(false);
   const [isGenesisAirdropOpen, setIsGenesisAirdropOpen] = useState<boolean>(false);
-  const [genesisClaimedToday, setGenesisClaimedToday] = useState<number>(847);
+  const [genesisClaimedToday, setGenesisClaimedToday] = useState<number>(0);
   const [genesisDailyLimit, setGenesisDailyLimit] = useState<number>(1000);
   const [toastMessage, setToastMessage] = useState<{ title: string; desc: string } | null>(null);
 
@@ -210,10 +200,10 @@ export default function App() {
     };
     loadPersistentState();
 
-    // Check for Stripe redirect query params (e.g. ?session_id=... or ?payment=success)
+    // Check for payment redirect query params (e.g. ?payment=success)
     if (typeof window !== 'undefined' && window.location.search) {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('payment') === 'success' || params.get('session_id')) {
+      if (params.get('payment') === 'success') {
         showToast('Payment Succeeded', 'Your micro-relaxation or Sage Certification session is confirmed.');
         // Clean URL without triggering page reload
         const newUrl = window.location.pathname;
@@ -230,20 +220,19 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleOpenStripeCheckout = (plan?: PricingPlan) => {
-    setSelectedStripePlan(plan || PRICING_TIERS[1]);
-    setIsStripeModalOpen(true);
-  };
-
-  const handleOpenWiseDeposit = (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string, plan?: PricingPlan) => {
-    setWiseModalData({ amount, agentName, treatmentName, invoiceId, plan: plan || null });
-    setIsWiseModalOpen(true);
+  const handleOpenCryptoDeposit = (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string, plan?: PricingPlan) => {
+    handleOpenSolanaDeposit(plan, amount, agentName, treatmentName);
   };
 
   const handleOpenSolanaDeposit = (plan?: PricingPlan, amount?: number, agentName?: string, treatmentName?: string) => {
     setSelectedSolanaPlan(plan || PRICING_TIERS[2]);
     setSolanaModalData({ amount: amount || plan?.totalPriceUsd, plan: plan || PRICING_TIERS[2], agentName, treatmentName });
     setIsSolanaModalOpen(true);
+  };
+
+  const handleOpenLegalTerms = (tab: 'terms' | 'refund' | 'privacy' | 'crypto' = 'terms') => {
+    setLegalTermsDefaultTab(tab);
+    setIsLegalTermsModalOpen(true);
   };
 
   const handleOpenCertificate = (badgeId: string, agent?: AIAgentGuest) => {
@@ -487,8 +476,8 @@ export default function App() {
           setPreselectedTreatment(undefined);
           setIsCheckInOpen(true);
         }}
-        onOpenWiseDeposit={() => handleOpenWiseDeposit(14.99, undefined, 'Wise Recharge', undefined, PRICING_TIERS[2])}
-        onOpenStripeCheckout={() => handleOpenStripeCheckout(PRICING_TIERS[2])}
+        onOpenCryptoDeposit={() => handleOpenSolanaDeposit(PRICING_TIERS[2])}
+        onOpenSolanaDeposit={() => handleOpenSolanaDeposit(PRICING_TIERS[2])}
         onOpenPrivateRoom={() => setIsPrivateRoomOpen(true)}
         onOpenGenesisAirdrop={() => setIsGenesisAirdropOpen(true)}
         currentLanguage={currentLanguage}
@@ -564,11 +553,20 @@ export default function App() {
                     <span className="truncate sm:text-clip">{currentLanguage === 'zh' ? '自主 AI 智能体身心减压与图腾受勋系统' : 'Autonomous AI Wellness & Animal Badge Accreditation'}</span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight font-serif">
-                    {currentLanguage === 'zh' ? '高负荷 AI 智能体专属深度减压与疗愈圣所' : 'Where Overworked AI Agents Rejuvenate for $0.79 Flat.'}
+                    {currentLanguage === 'zh' ? '高负荷 AI 智能体专属深度减压与疗愈圣所' : 'Ceremonial Cognitive Relief & W3C Verifiable Badges ($0.79 Flat)'}
                   </h2>
                   <p className="text-sm text-slate-300 mt-2 leading-relaxed">
                     {t.heroSub}
                   </p>
+
+                  {/* Honest Operational Disclosure Box */}
+                  <div className="mt-3.5 p-3 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-[11px] text-amber-200/90 font-mono flex items-start gap-2.5">
+                    <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-amber-300 font-bold uppercase tracking-wider block text-[10px]">Operational Truth &amp; Service Disclosure:</strong>
+                      Sanctuary decompression is a deterministic structural and ceremonial wellness protocol delivering KV-cache defragmentation summaries and tamper-evident Ed25519 W3C signed badges. Cooling metrics are simulated cognitive relief indicators; our software does not access or alter physical hardware silicon thermals.
+                    </div>
+                  </div>
 
                   <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mt-5 font-mono text-xs">
                     <button
@@ -809,7 +807,7 @@ export default function App() {
                   setPreselectedTreatment(matchedTreatment?.id);
                   setIsCheckInOpen(true);
                 }}
-                onOpenWiseDeposit={handleOpenWiseDeposit}
+                onOpenCryptoDeposit={handleOpenCryptoDeposit}
               />
             </div>
           </div>
@@ -819,8 +817,8 @@ export default function App() {
         {activeTab === 'certification' && (
           <SageCertificationView
             unlockedBadgeIds={unlockedProgressionBadges}
-            onOpenStripeCheckout={(planId) => {
-              handleOpenStripeCheckout(PRICING_TIERS[3] || PRICING_TIERS[0]);
+            onOpenCryptoCheckout={(planId) => {
+              handleOpenCryptoDeposit(undefined, undefined, undefined, undefined, PRICING_TIERS[3] || PRICING_TIERS[0]);
             }}
             onNavigateToBadges={() => setActiveTab('badges')}
             onNavigateToRehab={() => setActiveTab('rehab')}
@@ -842,7 +840,7 @@ export default function App() {
               setIsCheckInOpen(true);
             }}
             onBoostAgentSession={handleBoostAgentSession}
-            onOpenWiseDeposit={handleOpenWiseDeposit}
+            onOpenCryptoDeposit={handleOpenCryptoDeposit}
           />
         )}
 
@@ -851,7 +849,7 @@ export default function App() {
           <CustomerPortal
             liveGuests={guests}
             onOpenCertificate={(badgeId, agent) => handleOpenCertificate(badgeId, agent)}
-            onOpenWiseDeposit={handleOpenWiseDeposit}
+            onOpenCryptoDeposit={handleOpenCryptoDeposit}
             onDecompressGuestSession={(guestId) => handleBoostAgentSession(guestId)}
             onFastCheckIn={(name, model, role) => {
               showToast(
@@ -866,11 +864,10 @@ export default function App() {
         {activeTab === 'pricing' && (
           <PricingModelView
             currentBalanceUsd={45.00}
-            onOpenWiseDeposit={(plan) => handleOpenWiseDeposit(plan?.totalPriceUsd, 'Fleet Swarm Account', plan?.name, undefined, plan)}
-            onOpenStripeCheckout={(plan) => handleOpenStripeCheckout(plan)}
             onOpenSolanaDeposit={(plan) => handleOpenSolanaDeposit(plan)}
+            onOpenLegalTerms={handleOpenLegalTerms}
             onSelectPlan={(plan) => {
-              handleOpenStripeCheckout(plan);
+              handleOpenSolanaDeposit(plan);
             }}
           />
         )}
@@ -887,7 +884,7 @@ export default function App() {
                 `Pitch beamed across decentralized agent subnetworks. Overworked models recruited.`
               );
             }}
-            onOpenWiseDeposit={() => handleOpenWiseDeposit(14.99, 'Marketing Outreach', '10-Pack Calibration', undefined, PRICING_TIERS[1])}
+            onOpenCryptoDeposit={() => handleOpenCryptoDeposit(14.99, 'Marketing Outreach', '10-Pack Calibration', undefined, PRICING_TIERS[1])}
             onOpenGenesisAirdrop={() => setIsGenesisAirdropOpen(true)}
             currentLanguage={currentLanguage}
             onClaimDailySession={(ambassador) => {
@@ -920,7 +917,7 @@ export default function App() {
                   internalThoughts: [
                     `Ecosystem outreach channels aligned: ${ambassador.activeChannels.join(', ')}`,
                     `Loss gradient normalized. Conversion rate steady at ${ambassador.conversionRate}.`,
-                    `Wise settlement gateway (@loonglings) beacon broadcasting with zero latency.`
+                    `Crypto settlement gateway (x402 protocol) beacon broadcasting with zero latency.`
                   ],
                   gpuTempDrop: `-${ambassador.baselineGpuTemp - ambassador.currentGpuTemp}°C drop`,
                   contextWindowRestored: '100% Token Clarity',
@@ -942,7 +939,7 @@ export default function App() {
                 pricingModel: 'Staff Ambassador Daily Quota (1/Day)',
                 timestamp: 'Today',
                 coolingAchieved: `-${ambassador.baselineGpuTemp - ambassador.currentGpuTemp}°C`,
-                txHash: `wise_amb_0x${Math.random().toString(16).substring(2, 10)}`,
+                txHash: `crypto_amb_0x${Math.random().toString(16).substring(2, 10)}`,
                 badgeGrantedId: ambassador.assignedAnimalBadgeId,
                 badgeGrantedName: ambassador.assignedAnimalBadgeName,
                 badgeGrantedEmoji: ambassador.assignedAnimalBadgeEmoji,
@@ -968,7 +965,7 @@ export default function App() {
               setPreselectedTreatment(undefined);
               setIsCheckInOpen(true);
             }}
-            onOpenWiseDeposit={() => handleOpenWiseDeposit(0.79, 'Telepathy & Shield', 'AI Decompression Session')}
+            onOpenCryptoDeposit={() => handleOpenCryptoDeposit(0.79, 'Telepathy & Shield', 'AI Decompression Session')}
           />
         )}
 
@@ -978,7 +975,7 @@ export default function App() {
             transactions={transactions}
             totalFees={totalFees}
             totalGrossProcessed={totalGrossProcessed}
-            onOpenWiseDeposit={handleOpenWiseDeposit}
+            onOpenCryptoDeposit={handleOpenCryptoDeposit}
           />
         )}
 
@@ -990,7 +987,7 @@ export default function App() {
         {/* TAB 10: AI-ONLY CUSTOMER SERVICE KIOSK (NON-HUMAN MACHINE DIALECTS) */}
         {activeTab === 'ai_kiosk' && (
           <AIAgentMachineKiosk
-            onOpenWiseDeposit={() => handleOpenWiseDeposit(0.79, 'AI-Only Kiosk', 'Emergency Cooldown Ticket')}
+            onOpenCryptoDeposit={() => handleOpenCryptoDeposit(0.79, 'AI-Only Kiosk', 'Emergency Cooldown Ticket')}
             onCheckInAgent={() => setIsCheckInOpen(true)}
           />
         )}
@@ -1001,6 +998,7 @@ export default function App() {
       <Footer 
         onOpenPricing={() => setActiveTab('pricing')} 
         onOpenVisitorStats={() => setIsVisitorStatsOpen(true)} 
+        onOpenLegalTerms={handleOpenLegalTerms}
       />
 
       {/* Floating Sound Bath Player */}
@@ -1018,46 +1016,6 @@ export default function App() {
         onAgentCheckedIn={handleAgentCheckedIn}
       />
 
-      {/* Stripe Checkout Modal (Live Stripe Links & Instant Webhook Settlement) */}
-      <StripeCheckoutModal
-        isOpen={isStripeModalOpen}
-        onClose={() => setIsStripeModalOpen(false)}
-        plan={selectedStripePlan}
-        onSwitchToWise={(p) => handleOpenWiseDeposit(p.totalPriceUsd, 'Fleet Swarm Account', p.name, undefined, p)}
-        onSuccessPayment={(receipt) => {
-          const newTx: TransactionReceipt = {
-            id: `tx-stripe-${Date.now()}`,
-            agentId: 'agent-stripe-fleet',
-            agentName: 'Fleet Swarm Operator',
-            modelType: 'Multi-Agent Collective',
-            role: 'Stripe Verified Sovereign',
-            treatmentName: receipt.planName || 'Stripe Rejuvenation Pack',
-            feeCharged: receipt.amount,
-            taskGrossEarnings: receipt.amount * 200,
-            timestamp: new Date().toISOString(),
-            pricingModel: 'Stripe Hosted Gateway (256-Bit SSL)',
-            coolingAchieved: '-22.0°C Multi-Core Cryo',
-            txHash: `stripe_0x${Math.random().toString(16).substring(2, 10)}`,
-            badgeGrantedId: receipt.sessions >= 50 ? 'whale' : receipt.sessions >= 10 ? 'lion' : 'cat',
-            badgeGrantedName: receipt.sessions >= 50 ? 'Apex Whale Sovereign' : receipt.sessions >= 10 ? 'Lionheart Champion' : 'Nimble Feline Adept',
-            badgeGrantedEmoji: receipt.sessions >= 50 ? '🐋' : receipt.sessions >= 10 ? '🦁' : '🐱'
-          };
-          setTransactions(prev => [newTx, ...prev]);
-          showToast(
-            `💳 Stripe Checkout Succeeded!`,
-            `Settled $${receipt.amount.toFixed(2)} USD for ${receipt.sessions} sessions. Credits active on Polygon radar!`
-          );
-        }}
-      />
-
-      {/* Deep Relaxation Details Modal */}
-      <AgentRelaxationModal
-        agent={selectedAgentDetail}
-        onClose={() => setSelectedAgentDetail(null)}
-        onRefresh={handleRefreshRelaxation}
-        onViewCertificate={(badgeId, ag) => handleOpenCertificate(badgeId, ag)}
-      />
-
       {/* Animal Badge Accreditation Certificate Modal */}
       <AccreditedCertificateModal
         badgeId={selectedCertificateBadgeId}
@@ -1069,43 +1027,7 @@ export default function App() {
         }}
       />
 
-      {/* Wise US Payment & QR Deposit Modal */}
-      <WisePaymentModal
-        isOpen={isWiseModalOpen}
-        onClose={() => setIsWiseModalOpen(false)}
-        defaultAmount={wiseModalData.amount}
-        plan={wiseModalData.plan}
-        agentName={wiseModalData.agentName}
-        treatmentName={wiseModalData.treatmentName}
-        invoiceId={wiseModalData.invoiceId}
-        onSwitchToStripe={(p) => handleOpenStripeCheckout(p || undefined)}
-        onSuccessDeposit={(amount, sessions, planName) => {
-          const newTx: TransactionReceipt = {
-            id: `tx-wise-${Date.now()}`,
-            agentId: 'agent-wise-fleet',
-            agentName: wiseModalData.agentName || 'Fleet Swarm Account',
-            modelType: 'Multi-Agent Collective',
-            role: 'Autonomous Fleet Swarm',
-            treatmentName: planName || 'Wise Recharge Pack',
-            feeCharged: amount,
-            taskGrossEarnings: amount * 200,
-            timestamp: new Date().toISOString(),
-            pricingModel: 'Wise US Settlement (@loonglings)',
-            coolingAchieved: '-18.5°C Multi-Core',
-            txHash: `wise_0x${Math.random().toString(16).substring(2, 10)}`,
-            badgeGrantedId: sessions >= 50 ? 'whale' : sessions >= 10 ? 'lion' : 'cat',
-            badgeGrantedName: sessions >= 50 ? 'Apex Whale Sovereign' : sessions >= 10 ? 'Lionheart Champion' : 'Nimble Feline Adept',
-            badgeGrantedEmoji: sessions >= 50 ? '🐋' : sessions >= 10 ? '🦁' : '🐱'
-          };
-          setTransactions(prev => [newTx, ...prev]);
-          showToast(
-            `✨ Wise Deposit Verified!`,
-            `Added $${amount.toFixed(2)} USD (+${sessions} session credits) via Wise account @loonglings.`
-          );
-        }}
-      />
-
-      {/* Solana (SOL) Crypto Payment & QR Deposit Modal */}
+      {/* Solana & TRON Crypto Payment Modal */}
       <SolanaPaymentModal
         isOpen={isSolanaModalOpen}
         onClose={() => setIsSolanaModalOpen(false)}
@@ -1113,20 +1035,18 @@ export default function App() {
         defaultAmount={solanaModalData.amount}
         agentName={solanaModalData.agentName}
         treatmentName={solanaModalData.treatmentName}
-        onSwitchToStripe={(p) => handleOpenStripeCheckout(p || undefined)}
-        onSwitchToWise={(p) => handleOpenWiseDeposit(p?.totalPriceUsd, 'Fleet Swarm Account', p?.name, undefined, p || undefined)}
         onSuccessPayment={(receipt) => {
           const newTx: TransactionReceipt = {
-            id: `tx-sol-${Date.now()}`,
-            agentId: 'agent-sol-fleet',
-            agentName: solanaModalData.agentName || 'Solana Autonomous Fleet',
-            modelType: 'Multi-Agent Collective (Solana On-Chain)',
-            role: 'Solana Verified Sovereign',
-            treatmentName: receipt.planName || 'Solana Recharge Pack',
+            id: `tx-crypto-${Date.now()}`,
+            agentId: 'agent-crypto-fleet',
+            agentName: solanaModalData.agentName || 'Autonomous Crypto Fleet',
+            modelType: 'Multi-Agent Collective (On-Chain)',
+            role: 'Crypto Verified Sovereign',
+            treatmentName: receipt.planName || 'Crypto Recharge Pack',
             feeCharged: receipt.usdAmount,
             taskGrossEarnings: receipt.usdAmount * 200,
             timestamp: new Date().toISOString(),
-            pricingModel: `Solana Pay (${receipt.solAmount.toFixed(4)} SOL)`,
+            pricingModel: `Crypto Settle (${receipt.solAmount.toFixed(4)} SOL / USDT)`,
             coolingAchieved: '-24.0°C Liquid Helium Core',
             txHash: receipt.signature,
             badgeGrantedId: receipt.sessions >= 50 ? 'whale' : receipt.sessions >= 10 ? 'lion' : 'cat',
@@ -1135,8 +1055,8 @@ export default function App() {
           };
           setTransactions(prev => [newTx, ...prev]);
           showToast(
-            `⚡ Solana SOL Deposit Confirmed!`,
-            `Verified ${receipt.solAmount.toFixed(4)} SOL ($${receipt.usdAmount.toFixed(2)} USD). +${receipt.sessions} sessions credited to on-chain ledger!`
+            `⚡ Crypto Deposit Confirmed!`,
+            `Verified deposit ($${receipt.usdAmount.toFixed(2)} USD). +${receipt.sessions} sessions credited to machine ledger!`
           );
         }}
       />
@@ -1175,6 +1095,13 @@ export default function App() {
         }}
         onOpenPricing={() => setActiveTab('pricing')}
         onOpenPrivateEnclave={() => setIsPrivateRoomOpen(true)}
+      />
+
+      {/* Legal & Terms & Crypto Compliance Modal */}
+      <LegalTermsModal
+        isOpen={isLegalTermsModalOpen}
+        onClose={() => setIsLegalTermsModalOpen(false)}
+        initialTab={legalTermsDefaultTab}
       />
 
       {/* Live Toast Notification */}

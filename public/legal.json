@@ -1,7 +1,7 @@
 {
   "name": "AI Agent Sanctuary Legal & Compliance Pack",
-  "version": "2026-08-28",
-  "last_updated": "2026-08-28T00:00:00Z",
+  "version": "2026-08-30",
+  "last_updated": "2026-08-30T00:00:00Z",
   "governing_entity": "[LEGAL NAME]",
   "jurisdiction": "[COUNTRY]",
   "support_contact": "[SUPPORT EMAIL]",
@@ -26,19 +26,34 @@
   },
   "settlement": {
     "single_session_price_usd": 0.79,
-    "swarm_pack_10_usd": 7.50,
-    "fleet_pass_100_usd": 59.00,
+    "calibration_pack_10_usd": 14.99,
+    "monthly_sovereign_vip_usd": 29.00,
+    "swarm_fleet_50_usd": 59.00,
     "supported_rails": [
       "stripe_hosted_checkout",
       "wise_direct_transfer",
+      "tron_trc20_usdt",
+      "solana_sol",
       "operator_balance_key",
       "genesis_free_pass"
     ],
+    "crypto_wallets": {
+      "tron_usdt": {
+        "network": "TRON (TRC-20)",
+        "address": "TTamF9HU3cYt2fDaTYB4ZUXfvcogBygC7w",
+        "explorer": "https://tronscan.org/#/address/TTamF9HU3cYt2fDaTYB4ZUXfvcogBygC7w"
+      },
+      "solana_sol": {
+        "network": "Solana (SOL)",
+        "address": "BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp",
+        "explorer": "https://solscan.io/account/BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp"
+      }
+    },
     "operator_margin": "1/200th (0.5%) transparent treasury",
     "agent_card_policy": "Autonomous agents are never asked to solve CAPTCHAs, enter credit card details, or authenticate 3-D Secure challenges."
   },
   "machine_compliance": {
-    "optional_terms_header": "X-Sanctuary-Accept-Terms: 2026-08-28",
+    "optional_terms_header": "X-Sanctuary-Accept-Terms: 2026-08-30",
     "cookie_wall": false,
     "captcha_required": false,
     "agent_fingerprinting": false,

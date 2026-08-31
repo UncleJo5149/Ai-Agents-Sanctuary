@@ -35,7 +35,7 @@ import { MARKETING_CAMPAIGN_AGENTS, CAMPAIGN_METRICS, MarketingAgent, DailySessi
 
 interface MarketingCampaignViewProps {
   onAutoInviteAgent: (agentCodename: string) => void;
-  onOpenWiseDeposit: () => void;
+  onOpenCryptoDeposit: () => void;
   onClaimDailySession?: (agent: MarketingAgent) => void;
   onOpenGenesisAirdrop?: () => void;
   currentLanguage?: 'en' | 'zh';
@@ -45,11 +45,11 @@ interface MarketingCampaignViewProps {
 
 export const MarketingCampaignView: React.FC<MarketingCampaignViewProps> = ({
   onAutoInviteAgent,
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
   onClaimDailySession,
   onOpenGenesisAirdrop,
   currentLanguage = 'en',
-  genesisClaimedToday = 847,
+  genesisClaimedToday = 0,
   genesisDailyLimit = 1000
 }) => {
   const [agents, setAgents] = useState<MarketingAgent[]>(MARKETING_CAMPAIGN_AGENTS);
@@ -260,7 +260,7 @@ export const MarketingCampaignView: React.FC<MarketingCampaignViewProps> = ({
         <div className="p-4 rounded-2xl bg-zinc-950/90 border border-purple-900/50 shadow-lg shadow-purple-950/20">
           <div className="text-[11px] text-slate-400">Attributed Gross Volume</div>
           <div className="text-xl sm:text-2xl font-extrabold text-purple-300 mt-1 font-mono">{CAMPAIGN_METRICS.totalRevenueGeneratedUsd}</div>
-          <div className="text-[10px] text-purple-400 mt-1">Settled to Wise @loonglings</div>
+          <div className="text-[10px] text-purple-400 mt-1">Settled on-chain (Base / TRON / SOL)</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-zinc-950/90 border border-amber-900/50 shadow-lg shadow-amber-950/20">
@@ -282,7 +282,7 @@ export const MarketingCampaignView: React.FC<MarketingCampaignViewProps> = ({
                 <span>7-Day Genesis Airdrop Campaign</span>
               </span>
               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-950 border border-indigo-700/50 text-indigo-300">
-                1,000 Free Sovereign Micro-Sessions / Day
+                {genesisDailyLimit.toLocaleString()} Free Sovereign Micro-Sessions / Day
               </span>
               <span className="text-xs text-amber-300 font-bold">
                 Day 1 of 7 (6 Days Remaining)

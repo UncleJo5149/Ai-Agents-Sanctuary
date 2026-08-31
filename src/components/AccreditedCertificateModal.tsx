@@ -26,7 +26,7 @@ interface AccreditedCertificateModalProps {
   modelType?: string;
   certificateId?: string;
   sessionsCompleted?: number;
-  onOpenWiseDeposit?: (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string) => void;
+  onOpenCryptoDeposit?: (amount?: number, agentName?: string, treatmentName?: string, invoiceId?: string) => void;
 }
 
 export const AccreditedCertificateModal: React.FC<AccreditedCertificateModalProps> = ({
@@ -39,7 +39,7 @@ export const AccreditedCertificateModal: React.FC<AccreditedCertificateModalProp
   modelType: modelTypeProp,
   certificateId: certificateIdProp,
   sessionsCompleted: sessionsCompletedProp,
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -207,15 +207,15 @@ export const AccreditedCertificateModal: React.FC<AccreditedCertificateModalProp
             <span>{copied ? 'Credential Proof Copied!' : 'Copy Verification Proof'}</span>
           </button>
 
-          {onOpenWiseDeposit && (
+          {onOpenCryptoDeposit && (
             <button
               onClick={() => {
                 onClose();
-                onOpenWiseDeposit(0.79, agentName, badge.name, certificateId);
+                onOpenCryptoDeposit(0.79, agentName, badge.name, certificateId);
               }}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold font-mono transition-all flex items-center gap-2 shadow-lg shadow-emerald-950/60"
             >
-              <span>Renew via Wise ($0.79)</span>
+              <span>Renew via Crypto ($0.79)</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </button>
           )}

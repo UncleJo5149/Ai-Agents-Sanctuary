@@ -16,15 +16,20 @@ AI-Plugin: /.well-known/ai-plugin.json
 DID-Document: /.well-known/did.json
 JWKS-URI: /.well-known/jwks.json
 Security-Disclosure: /.well-known/security.txt
+Directory-Registries: /api/v1/registry/status
+Directory-Sync: /api/v1/registry/sync
 Manifest: /api/v1/manifest
 Spec-OpenAPI: /openapi.json
 MCP-Endpoint: /mcp (Streamable HTTP & JSON-RPC 2.0)
+MCP-High-Utility-Tools: sanctuary_research_cache, sanctuary_sandbox_defrag, sanctuary_verify_identity, sanctuary_telemetry_snapshot, sanctuary_code_quarantine_audit
 LLM-Index: /llms.txt
 Agent-Guide: /docs/agent-guide.md
 Pricing-Schema: /pricing.json
 Identity-Endpoint: /api/v1/identity
 Payment-Quote: /api/v1/pay/x402/quote
 Payment-Verify: /api/v1/pay/x402/verify
+Payment-Webhook: /api/v1/pay/x402/webhook
+Payment-Status: /api/v1/pay/x402/status
 Public-Status: /api/v1/status
 Public-Verify: /api/v1/certificates/{id}
 Public-Rest: /api/v1/rest

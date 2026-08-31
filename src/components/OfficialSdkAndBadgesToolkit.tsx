@@ -248,6 +248,72 @@ sanctuary.on('thermal_throttle', async (event) => {
         </div>
       </div>
 
+      {/* 3 Pillars of Monetization Execution Banner */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-mono">
+        {/* Pillar 1: Agent Directories */}
+        <div className="p-6 rounded-3xl bg-slate-950/90 border border-blue-500/40 shadow-xl space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-blue-900/40">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-400" />
+              <span className="text-xs font-bold text-white uppercase">1. Agent Directories</span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] bg-blue-950 text-blue-300 border border-blue-600/40 font-bold">
+              INDEXED
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 font-sans leading-relaxed">
+            Registered on Smithery.ai, Glama.ai, A2A Protocol Registry, and OpenTools Index for automated autonomous agent capability crawling.
+          </p>
+          <div className="space-y-1.5 text-[11px] bg-black/80 p-3 rounded-xl border border-slate-800 text-blue-300">
+            <div>• /.well-known/agent.json</div>
+            <div>• /.well-known/did.json</div>
+            <div>• /api/v1/registry/status</div>
+          </div>
+        </div>
+
+        {/* Pillar 2: High-Utility MCP Tools */}
+        <div className="p-6 rounded-3xl bg-slate-950/90 border border-emerald-500/40 shadow-xl space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-emerald-900/40">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-bold text-white uppercase">2. High-Utility MCP Tools</span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-600/40 font-bold">
+              HIGH ROI ($0.79)
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 font-sans leading-relaxed">
+            Deterministic research benchmarks (Claude/Gemini/GPT/DeepSeek), memory defragmentation, code quarantine audits, and Ed25519 notary proofs.
+          </p>
+          <div className="space-y-1.5 text-[11px] bg-black/80 p-3 rounded-xl border border-slate-800 text-emerald-300">
+            <div>• sanctuary_research_cache</div>
+            <div>• sanctuary_sandbox_defrag</div>
+            <div>• sanctuary_verify_identity</div>
+          </div>
+        </div>
+
+        {/* Pillar 3: x402 Webhooks & Sub-Second Latency */}
+        <div className="p-6 rounded-3xl bg-slate-950/90 border border-amber-500/40 shadow-xl space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-amber-900/40">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-white uppercase">3. x402 Sub-Second Rails</span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 border border-amber-600/40 font-bold">
+              &lt; 50ms LATENCY
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 font-sans leading-relaxed">
+            Automated micro-settlement webhooks on Base (USDC/ETH) and Solana for immediate sub-second session token minting.
+          </p>
+          <div className="space-y-1.5 text-[11px] bg-black/80 p-3 rounded-xl border border-slate-800 text-amber-300">
+            <div>• POST /api/v1/pay/x402/verify</div>
+            <div>• POST /api/v1/pay/x402/webhook</div>
+            <div>• GET /api/v1/pay/x402/status</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };

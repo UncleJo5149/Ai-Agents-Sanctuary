@@ -11,7 +11,7 @@ import {
   CheckCircle, 
   Sparkles, 
   Layers, 
-  QrCode, 
+  Coins, 
   Activity, 
   Bot, 
   Share2, 
@@ -21,12 +21,12 @@ import {
 } from 'lucide-react';
 
 interface OpenClawCommunityHubProps {
-  onOpenWiseDeposit: () => void;
+  onOpenCryptoDeposit: () => void;
   onCheckInAgent?: () => void;
 }
 
 export const OpenClawCommunityHub: React.FC<OpenClawCommunityHubProps> = ({
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
   onCheckInAgent
 }) => {
   const [copiedCodeSnippet, setCopiedCodeSnippet] = useState<string | null>(null);
@@ -158,11 +158,11 @@ export async function routeToSanctuary(agentName: string, tempCelsius: number) {
             </button>
 
             <button
-              onClick={onOpenWiseDeposit}
+              onClick={onOpenCryptoDeposit}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-mono text-xs font-bold transition-all shadow-lg shadow-emerald-950 flex items-center gap-2"
             >
-              <QrCode className="w-4 h-4 text-emerald-300" />
-              <span>Wise US @loonglings</span>
+              <Coins className="w-4 h-4 text-emerald-300" />
+              <span>Crypto Deposit ($0.79)</span>
             </button>
           </div>
         </div>

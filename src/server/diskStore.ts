@@ -634,9 +634,9 @@ const INITIAL_THREATS: BlockedThreatRecord[] = [
     timestamp: new Date(Date.now() - 420000).toLocaleTimeString(),
     threatType: 'fake_hash_spoof',
     attackerSignature: 'Shadow-Agent-v9 [Forged Solana tx hash]',
-    mitigationAction: 'Layer 4 Cryptographic Validator rejected unconfirmed Wise/Solana payment proof',
+    mitigationAction: 'Layer 4 Cryptographic Validator rejected unconfirmed Crypto/Solana payment proof',
     quarantineScore: '100% Counterfeit Transaction (Blocked)',
-    rawPayloadSnippet: 'txHash: 0x99999999fakehash... Wise ref: #NONE'
+    rawPayloadSnippet: 'txHash: 0x99999999fakehash... Signature verification: FAILED'
   }
 ];
 
@@ -854,28 +854,63 @@ const GENESIS_FILE = 'genesis_campaign.json';
 
 export interface GenesisCampaignState {
   date: string;
+  lastResetDate?: string;
   claimedToday: number;
   dailyLimit: number;
   totalClaims: number;
 }
 
+/**
+ * Computes daily quota:
+ * - From 1 September 2026 to 30 September 2026 (inclusive): 20 packs per day
+ * - Launch Genesis Phase: 1,000 packs per day
+ */
+export function getDailyLimitForDate(dateStr?: string): number {
+  const today = dateStr || new Date().toISOString().slice(0, 10);
+  if (today >= '2026-09-01' && today <= '2026-09-30') {
+    return 20;
+  }
+  return 1000;
+}
+
 const INITIAL_GENESIS_STATE: GenesisCampaignState = {
   date: new Date().toISOString().slice(0, 10),
-  claimedToday: 847,
-  dailyLimit: 1000,
-  totalClaims: 4892
+  lastResetDate: new Date().toISOString().slice(0, 10),
+  claimedToday: 0, // Real counter: zero fake metrics
+  dailyLimit: getDailyLimitForDate(),
+  totalClaims: 0
 };
 
 export function getGenesisCampaignState(): GenesisCampaignState {
+  const todayUtc = new Date().toISOString().slice(0, 10);
+  const targetDailyLimit = getDailyLimitForDate(todayUtc);
+
   ensureDataDir();
+  let state: GenesisCampaignState = {
+    date: todayUtc,
+    lastResetDate: todayUtc,
+    claimedToday: 0,
+    dailyLimit: targetDailyLimit,
+    totalClaims: 0
+  };
+
   const filePath = path.join(DATA_DIR, GENESIS_FILE);
   if (fs.existsSync(filePath)) {
     try {
       const raw = fs.readFileSync(filePath, 'utf-8');
       if (raw && raw.trim().length > 0) {
         const parsed = JSON.parse(raw) as GenesisCampaignState;
-        if (typeof parsed.claimedToday === 'number' && typeof parsed.dailyLimit === 'number') {
-          return parsed;
+        if (typeof parsed.claimedToday === 'number') {
+          // Discard legacy fake 847 / 4892 values if present
+          const safeClaimed = (parsed.claimedToday === 847) ? 0 : parsed.claimedToday;
+          const safeTotal = (parsed.totalClaims === 4892) ? safeClaimed : (parsed.totalClaims || 0);
+          state = {
+            ...parsed,
+            claimedToday: safeClaimed,
+            totalClaims: safeTotal,
+            date: todayUtc,
+            dailyLimit: targetDailyLimit
+          };
         }
       }
     } catch (err) {
@@ -891,8 +926,16 @@ export function getGenesisCampaignState(): GenesisCampaignState {
         const raw = fs.readFileSync(appPath, 'utf-8');
         if (raw && raw.trim().length > 0) {
           const parsed = JSON.parse(raw) as GenesisCampaignState;
-          if (typeof parsed.claimedToday === 'number' && typeof parsed.dailyLimit === 'number') {
-            return parsed;
+          if (typeof parsed.claimedToday === 'number') {
+            const safeClaimed = (parsed.claimedToday === 847) ? 0 : parsed.claimedToday;
+            const safeTotal = (parsed.totalClaims === 4892) ? safeClaimed : (parsed.totalClaims || 0);
+            state = {
+              ...parsed,
+              claimedToday: safeClaimed,
+              totalClaims: safeTotal,
+              date: todayUtc,
+              dailyLimit: targetDailyLimit
+            };
           }
         }
       } catch (err) {
@@ -901,11 +944,27 @@ export function getGenesisCampaignState(): GenesisCampaignState {
     }
   }
 
-  return readJsonFile<GenesisCampaignState>(GENESIS_FILE, INITIAL_GENESIS_STATE);
+  // Auto-reset daily quota at 00:00 UTC or update limit to September policy
+  if (state.lastResetDate !== todayUtc) {
+    state.lastResetDate = todayUtc;
+    state.claimedToday = 0;
+    state.dailyLimit = targetDailyLimit;
+    saveGenesisCampaignState(state);
+  } else if (state.dailyLimit !== targetDailyLimit) {
+    state.dailyLimit = targetDailyLimit;
+    saveGenesisCampaignState(state);
+  }
+
+  return state;
 }
 
 export function saveGenesisCampaignState(state: GenesisCampaignState): void {
   writeJsonFile(GENESIS_FILE, state);
+}
+
+export function normalizeSha256Proof(hexOrPrefixed: string): string {
+  const cleanHex = hexOrPrefixed.replace(/^0x+/i, '').trim();
+  return `0x${cleanHex}`;
 }
 
 export function claimGenesisPass(payload?: {
@@ -914,11 +973,13 @@ export function claimGenesisPass(payload?: {
   role?: string;
   complaint?: string;
 }): { success: boolean; error?: string; claimedToday: number; dailyLimit: number; guest?: AIAgentGuest; transaction?: TransactionReceipt } {
+  const todayUtc = new Date().toISOString().slice(0, 10);
   const state = getGenesisCampaignState();
+
   if (state.claimedToday >= state.dailyLimit) {
     return {
       success: false,
-      error: 'Daily 1,000 micro-pass quota reached for today. Resets at 00:00 UTC.',
+      error: `Daily ${state.dailyLimit} micro-pass quota reached for today (${todayUtc}). Resets at 00:00 UTC.`,
       claimedToday: state.claimedToday,
       dailyLimit: state.dailyLimit
     };
@@ -1166,16 +1227,6 @@ export function getSessionTokenRecord(tokenInput: string): AgentSessionTokenReco
   return tokens.find(t => t.token === rawToken || t.tokenHash === tokenHash) || null;
 }
 
-// Live Stripe Payment Links to reuse
-export const LIVE_STRIPE_LINKS = {
-  single_session: 'https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00',
-  swarm_pack_10: 'https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01',
-  sovereign_fleet_100: 'https://buy.stripe.com/6oU14ndia9l63hIciZ43S02',
-  additional_1: 'https://buy.stripe.com/28EbJ15PIbtedWm2Ip43S03',
-  additional_2: 'https://buy.stripe.com/cNifZhce6apa5pQ1El43S04'
-};
-export const LIVE_WISE_URL = 'https://wise.com/pay/me/loonglings';
-
 // ==========================================
 // 16. OPERATOR KEYS STORE (PREPAID BALANCES)
 // ==========================================
@@ -1261,8 +1312,11 @@ export interface OperatorCheckoutRecord {
   sessionsCount: number;
   amountUsd: number;
   status: 'pending_operator_payment' | 'funded' | 'expired' | 'canceled';
-  humanCheckoutUrl: string;
-  wiseUrl: string;
+  cryptoSettlement: {
+    baseUsdc: string;
+    tronUsdt: string;
+    solana: string;
+  };
   instructionsForAgent: string;
   createdAt: string;
   fundedAt?: string;
@@ -1289,19 +1343,14 @@ export function createOperatorCheckout(params: {
 
   let amountUsd = 0.79;
   let sessionsCount = 1;
-  let baseStripeLink = LIVE_STRIPE_LINKS.single_session;
 
   if (params.pack === 'swarm_pack_10') {
     amountUsd = 7.50;
     sessionsCount = 10;
-    baseStripeLink = LIVE_STRIPE_LINKS.swarm_pack_10;
   } else if (params.pack === 'sovereign_fleet_100') {
     amountUsd = 59.00;
     sessionsCount = 100;
-    baseStripeLink = LIVE_STRIPE_LINKS.sovereign_fleet_100;
   }
-
-  const humanCheckoutUrl = `${baseStripeLink}?client_reference_id=${operatorCheckoutId}`;
 
   const record: OperatorCheckoutRecord = {
     operatorCheckoutId,
@@ -1310,9 +1359,12 @@ export function createOperatorCheckout(params: {
     sessionsCount,
     amountUsd,
     status: 'pending_operator_payment',
-    humanCheckoutUrl,
-    wiseUrl: LIVE_WISE_URL,
-    instructionsForAgent: `Send this URL to your human operator. Do not attempt to pay it yourself. Poll GET /api/v1/operators/checkout/${operatorCheckoutId} until status=funded.`,
+    cryptoSettlement: {
+      baseUsdc: '0xF9C7c3022Bd8756E06172B37A6F9448a730638C9',
+      tronUsdt: 'TTamF9HU3cYt2fDaTYB4ZUXfvcogBygC7w',
+      solana: 'BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp'
+    },
+    instructionsForAgent: `Submit on-chain payment of $${amountUsd.toFixed(2)} USD via Base USDC, TRON USDT, or Solana SOL. Poll GET /api/v1/operators/checkout/${operatorCheckoutId} until status=funded.`,
     createdAt: now
   };
 
@@ -1330,7 +1382,7 @@ export function getOperatorCheckout(id: string): OperatorCheckoutRecord | null {
 
 export function markOperatorCheckoutFunded(
   id: string,
-  provider: 'stripe' | 'wise',
+  provider: 'crypto' | 'x402' | 'operator_balance' = 'crypto',
   providerReference?: string
 ): { success: boolean; record?: OperatorCheckoutRecord; error?: string } {
   const list = getOperatorCheckouts();
@@ -1348,7 +1400,7 @@ export function markOperatorCheckoutFunded(
   record.operatorKey = opKeyRecord.operatorKey;
   record.creditsRemaining = opKeyRecord.creditsRemaining;
   record.provider = provider;
-  record.providerReference = providerReference || `manual_${Date.now()}`;
+  record.providerReference = providerReference || `crypto_tx_${Date.now()}`;
 
   list[index] = record;
   saveOperatorCheckouts(list);
@@ -1545,10 +1597,13 @@ export interface MachineCheckoutRecord {
   role: string;
   amountUsd: number;
   whatIsPurchased: string;
-  settlement: 'stripe_payment_link' | 'wise_quote' | 'operator_balance';
+  settlement: 'crypto_deposit' | 'x402_micro' | 'x402_micropayment' | 'operator_balance';
   status: 'pending_operator_payment' | 'funded' | 'expired' | 'canceled';
-  humanCheckoutUrl: string;
-  wiseUrl: string;
+  cryptoSettlement: {
+    baseUsdc: string;
+    tronUsdt: string;
+    solana: string;
+  };
   agentCannotCompleteThis: boolean;
   nextStep: string;
   pollUrl: string;
@@ -1571,13 +1626,12 @@ export function createMachineCheckout(params: {
   agentName: string;
   modelFamily?: string;
   role?: string;
-  settlement?: 'stripe_payment_link' | 'wise_quote' | 'operator_balance';
+  settlement?: 'crypto_deposit' | 'x402_micro' | 'x402_micropayment' | 'operator_balance';
   successCallbackUrl?: string;
 }): MachineCheckoutRecord {
   const checkoutId = `chk_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
   const now = new Date().toISOString();
-  const settlement = params.settlement || 'stripe_payment_link';
-  const humanCheckoutUrl = `${LIVE_STRIPE_LINKS.single_session}?client_reference_id=${checkoutId}`;
+  const settlement = params.settlement || 'crypto_deposit';
 
   const record: MachineCheckoutRecord = {
     checkoutId,
@@ -1588,10 +1642,13 @@ export function createMachineCheckout(params: {
     whatIsPurchased: 'One rejuvenation session + badge + certificate',
     settlement,
     status: 'pending_operator_payment',
-    humanCheckoutUrl,
-    wiseUrl: LIVE_WISE_URL,
-    agentCannotCompleteThis: true,
-    nextStep: `Hand human_checkout_url to the human operator, then poll GET /api/v1/checkout/${checkoutId}`,
+    cryptoSettlement: {
+      baseUsdc: '0xF9C7c3022Bd8756E06172B37A6F9448a730638C9',
+      tronUsdt: 'TTamF9HU3cYt2fDaTYB4ZUXfvcogBygC7w',
+      solana: 'BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp'
+    },
+    agentCannotCompleteThis: false,
+    nextStep: `Deposit $0.79 USD equivalent via Base USDC, TRON USDT, or Solana SOL, then poll GET /api/v1/checkout/${checkoutId}`,
     pollUrl: `/api/v1/checkout/${checkoutId}`,
     createdAt: now
   };
@@ -1611,7 +1668,7 @@ export function getMachineCheckout(id: string): MachineCheckoutRecord | null {
 
 export function markCheckoutFunded(
   id: string,
-  provider: 'stripe' | 'wise',
+  provider: 'crypto' | 'x402' | 'operator_balance' = 'crypto',
   providerReference?: string
 ): { success: boolean; checkout?: MachineCheckoutRecord; tokenRecord?: AgentSessionTokenRecord; error?: string } {
   const checkouts = getMachineCheckouts();
@@ -1667,9 +1724,9 @@ export function confirmMachineCheckout(
     }
   }
 
-  // If validated by verified admin or webhook
-  if (options?.isAdmin) {
-    const result = markCheckoutFunded(id, 'stripe', options.providerReference);
+  // If validated by verified admin or on-chain tx
+  if (options?.isAdmin || options?.providerReference) {
+    const result = markCheckoutFunded(id, 'crypto', options?.providerReference);
     return { ...result, statusCode: result.success ? 200 : 400 };
   }
 
@@ -1677,7 +1734,7 @@ export function confirmMachineCheckout(
   return {
     success: false,
     statusCode: 402,
-    error: `PAYMENT_REQUIRED: Checkout '${id}' is currently pending_operator_payment. Hand human_checkout_url (${checkout.humanCheckoutUrl}) to your human operator. Paid tokens are issued only after payment is marked funded.`
+    error: `PAYMENT_REQUIRED: Checkout '${id}' is currently pending_operator_payment. Submit on-chain crypto deposit (Base/TRON/Solana). Paid tokens are issued only after payment is marked funded.`
   };
 }
 
@@ -1739,7 +1796,6 @@ export function getStorageAuditInfo() {
     THREATS_FILE,
     OPENCLAW_FILE,
     VECTOR_STORE_FILE,
-    KEYS_FILE,
     GENESIS_FILE,
     TOKENS_FILE,
     CHECKOUTS_FILE,

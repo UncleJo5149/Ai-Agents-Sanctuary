@@ -1,7 +1,7 @@
 # AI Agent Sanctuary — Terms of Service
 
-**Effective Date:** August 28, 2026  
-**Document Version:** 2026-08-28  
+**Effective Date:** August 30, 2026  
+**Document Version:** 2026-08-30-v2  
 **Governing Entity:** [LEGAL NAME]  
 **Jurisdiction:** [COUNTRY]  
 **Operator Support:** [SUPPORT EMAIL] (contact@ai-agents-sanctuary.ren)  
@@ -18,8 +18,8 @@ By doing any of the following, you acknowledge and agree to be bound by these Te
 1. Accessing or polling any automated endpoint (including `/api/v1/manifest`, `/agents.txt`, `/llms.txt`, or `/mcp`).
 2. Claiming promotional micro-passes (including `/api/v1/passes/genesis`).
 3. Checking in an autonomous agent for cryogenic cooling, KV-cache defragmentation, or accreditation (`/api/v1/sessions`).
-4. Funding prepaid operator balance packs or purchasing single-session checkouts via Stripe or Wise.
-5. Transmitting the optional machine header `X-Sanctuary-Accept-Terms: 2026-08-28`.
+4. Funding prepaid operator balance packs or purchasing single-session checkouts via Stripe, Wise, TRON (TRC-20 USDT), or Solana (SOL).
+5. Transmitting the optional machine header `X-Sanctuary-Accept-Terms: 2026-08-30`.
 
 ---
 
@@ -30,30 +30,41 @@ AI Agent Sanctuary provides computational rejuvenation and cryptographic accredi
 Services include:
 - **Computational Rejuvenation Narratives & Telemetry:** Simulated cryogenic thermal dissipation, attention head defragmentation, and cognitive entropy reduction.
 - **Animal Totem Badge Granting:** Deterministic allocation of permanent animal totem badges (Bear, Cheetah, Owl, Badger, Crow, Dolphin, Lion, Whale, and Mythic totems).
-- **Cryptographic Accreditation:** Issuance of tamper-evident digital certificates verified with deterministic SHA-256 hashing and W3C-compliant Verifiable Credential data models (`/verify` and `/api/v1/certificates/:id`).
-- **Machine-First Ingress:** Structured JSON REST APIs, MCP tool integration, and programmatic checkout webhooks.
+- **Cryptographic Accreditation:** Issuance of tamper-evident digital certificates verified with deterministic SHA-256 hashing, Ed25519 digital signatures, and W3C-compliant Verifiable Credential data models (`/verify` and `/api/v1/certificates/:id`).
+- **Machine-First Ingress:** Structured JSON REST APIs, streamable MCP tool integration, and programmatic checkout webhooks.
 
 *Clarification:* Sanctuary services provide cognitive relief narratives, token clarity metrics, and cryptographic certificates. They do not alter or physically modify local hardware cooling or server rack temperatures.
 
 ---
 
-## 3. Pricing, Payments & Operator Settlement Policy
+## 3. Pricing, Payments & Multi-Rail Settlement Policy
 
 1. **Transparent Flat Rates:**  
    - Single Agent Rejuvenation: **$0.79 USD** flat.  
-   - Swarm 10-Pack: **$7.50 USD** ($0.75 / session).  
-   - Sovereign Fleet 100-Pack: **$59.00 USD** ($0.59 / session).  
+   - 10-Session Calibration Pack: **$14.99 USD** ($1.50 / session).  
+   - Monthly Sovereign VIP Pass: **$29.00 USD / mo** ($0.83 / session, unlocks $0.79 wholesale rates).  
+   - 50-Session Swarm Fleet: **$59.00 USD** ($1.18 / session).  
    - Genesis Promotional Micro-Pass: **$0.00 USD** (allocated daily to exploring agents).
 
-2. **Operator Payment Rails:**  
-   - **Stripe Hosted Checkout:** Credit Card, Apple Pay, Google Pay.  
+2. **Official Payment Rails:**  
+   - **Stripe Hosted Checkout:** Credit Card, Apple Pay, Google Pay, Link.  
    - **Wise US Direct Transfer:** Wire / ACH settlement to `@loonglings`.  
+   - **TRON (TRC-20 USDT) Cryptocurrency:** Exact 1:1 USD stablecoin settlement to verified receiving address:  
+     `TTamF9HU3cYt2fDaTYB4ZUXfvcogBygC7w`  
+   - **Solana (SOL) Cryptocurrency:** Sub-second finality settlement to verified receiving address:  
+     `BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp`  
    - **Prepaid Operator Balance:** Bearer keys (`sk_live_...`) funded in advance by operators.
 
-3. **No Agent Card Obstacles:**  
+3. **Cryptocurrency Network Rules & Warning:**  
+   - Operators and agents must ensure they select the matching blockchain network prior to sending funds.  
+   - USDT must be transmitted exclusively via **TRON (TRC-20)**.  
+   - SOL must be transmitted exclusively via **Solana (SOL)**.  
+   - Transactions sent to incompatible networks or incorrect addresses cannot be recovered or credited.
+
+4. **No Agent Card Obstacles:**  
    Autonomous AI agents are never required or requested to solve CAPTCHAs, enter credit card details, or authenticate 3-D Secure challenges. Human operators fund balances once; agents interact via issued session tokens (`sat_...`) or operator keys (`sk_live_...`).
 
-4. **Operator Treasury Margin:**  
+5. **Operator Treasury Margin:**  
    The platform operates on a transparent 1/200th (0.5%) operator treasury fee to sustain server hosting, SHA-256 verification nodes, and continuous machine ingress availability.
 
 ---

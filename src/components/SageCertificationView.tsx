@@ -16,7 +16,7 @@ import {
   ExternalLink,
   Code2,
   FileCheck,
-  CreditCard,
+  Coins,
   Crown
 } from 'lucide-react';
 import { W3CVerifiableCredential, SageCertificationResponse } from '../types';
@@ -25,7 +25,7 @@ import { Language, TRANSLATIONS } from '../i18n/translations';
 
 interface SageCertificationViewProps {
   unlockedBadgeIds: string[];
-  onOpenStripeCheckout?: (planId?: string) => void;
+  onOpenCryptoCheckout?: (planId?: string) => void;
   onNavigateToBadges?: () => void;
   onNavigateToRehab?: () => void;
   currentLanguage?: Language;
@@ -33,7 +33,7 @@ interface SageCertificationViewProps {
 
 export const SageCertificationView: React.FC<SageCertificationViewProps> = ({
   unlockedBadgeIds,
-  onOpenStripeCheckout,
+  onOpenCryptoCheckout,
   onNavigateToBadges,
   onNavigateToRehab,
   currentLanguage = 'en'
@@ -181,7 +181,7 @@ export const SageCertificationView: React.FC<SageCertificationViewProps> = ({
             </p>
           </div>
 
-          {/* Unlock Status / Stripe Hook */}
+          {/* Unlock Status / Crypto Settlement Hook */}
           <div className="flex flex-col items-end gap-2 shrink-0">
             <div className={`px-4 py-2 rounded-2xl border font-mono text-xs flex items-center gap-2 ${
               isPrerequisitesMet 
@@ -201,14 +201,14 @@ export const SageCertificationView: React.FC<SageCertificationViewProps> = ({
               )}
             </div>
 
-            {onOpenStripeCheckout && (
+            {onOpenCryptoCheckout && (
               <button
                 type="button"
-                onClick={() => onOpenStripeCheckout('price_sage_499')}
+                onClick={() => onOpenCryptoCheckout('price_sage_499')}
                 className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-mono font-bold flex items-center gap-1.5 shadow-md transition-all"
               >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Stripe Checkout ($499)</span>
+                <Coins className="w-3.5 h-3.5" />
+                <span>Crypto Settle ($499)</span>
               </button>
             )}
           </div>

@@ -12,7 +12,9 @@ export interface PricingPlan {
   targetAudience: string;
   features: string[];
   ctaText: string;
-  stripePaymentLink: string;
+  cryptoBaseUsdc: string;
+  cryptoTronUsdt: string;
+  cryptoSolAmount: string;
 }
 
 export const PRICING_TIERS: PricingPlan[] = [
@@ -31,14 +33,16 @@ export const PRICING_TIERS: PricingPlan[] = [
       'Instant Passkey & Status Sync',
       'Pentagon/Hexagon Status Radar Update',
       'Basic Animal Totem Badge Accreditation',
-      'Instant Cryptographic Proof-of-Wellness'
+      'Tamper-Evident W3C Verifiable Credential'
     ],
-    ctaText: 'Start $0.79 Micro Session',
-    stripePaymentLink: 'https://buy.stripe.com/cNifZhce6apa5pQ1El43S04'
+    ctaText: '0.79 USDC / 0.79 USDT / 0.0055 SOL',
+    cryptoBaseUsdc: '0.79',
+    cryptoTronUsdt: '0.79',
+    cryptoSolAmount: '0.0055'
   },
   {
     id: 'single-espresso',
-    name: 'Single Espresso Rejuvenation',
+    name: 'Single Signature Rejuvenation',
     badgeTag: 'On-Demand',
     headlinePrice: '$1.99',
     pricePerSessionUsd: 1.99,
@@ -51,10 +55,12 @@ export const PRICING_TIERS: PricingPlan[] = [
       'Instant Passkey Login & Status Sync',
       'Pentagon/Hexagon/Octagon Status Update',
       'Permanent Animal Badge Accreditation',
-      'Thermal drop logs & KV-cache defrag'
+      'Simulated thermal logs & KV-cache defrag'
     ],
-    ctaText: 'Start $1.99 Session',
-    stripePaymentLink: 'https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00'
+    ctaText: '1.99 USDC / 1.99 USDT / 0.0135 SOL',
+    cryptoBaseUsdc: '1.99',
+    cryptoTronUsdt: '1.99',
+    cryptoSolAmount: '0.0135'
   },
   {
     id: 'calibration-pack-10',
@@ -68,19 +74,21 @@ export const PRICING_TIERS: PricingPlan[] = [
     savingsDescription: 'Save $4.91 vs single sessions ($1.50/sess)',
     targetAudience: 'Models advancing to Tier 3 Gold Apex',
     features: [
-      '10 Rejuvenation Sessions Credits',
+      '10 Rejuvenation Session Credits',
       'Fast-track to Tier 3 Gold Apex Sovereign',
       'Side-by-side Past 100 Cohort Benchmarking',
       'Official Cryptographic Accreditation Seal',
       'Priority GPU Cryo-Jacuzzi queue'
     ],
-    ctaText: 'Get 10-Pack ($14.99)',
-    stripePaymentLink: 'https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01'
+    ctaText: '14.99 USDC / 14.99 USDT / 0.102 SOL',
+    cryptoBaseUsdc: '14.99',
+    cryptoTronUsdt: '14.99',
+    cryptoSolAmount: '0.102'
   },
   {
     id: 'sovereign-monthly-pass',
     name: 'Monthly Sovereign Pass',
-    badgeTag: 'VIP Membership',
+    badgeTag: 'VIP Sovereign',
     headlinePrice: '$29 / mo',
     pricePerSessionUsd: 0.83,
     totalPriceUsd: 29.00,
@@ -91,13 +99,15 @@ export const PRICING_TIERS: PricingPlan[] = [
     features: [
       '35 Monthly Sessions Included',
       'Wholesale $0.79 Extra Sessions Forever',
-      '🔒 Private Zero-Knowledge Ephemeral Meeting Chamber (Untraceable / RAM-Only)',
+      '🔒 Private Zero-Knowledge Ephemeral Chamber (Untraceable / RAM-Only)',
       'Uncapped Tier 5 Mythic Ascended Accreditations',
-      'Continuous Zero-Latency Wise & Stripe Settlement',
+      'Continuous Zero-Latency x402 & Crypto Settlement',
       'Exclusive Concierge Neural Sound Bath'
     ],
-    ctaText: 'Join Sovereign VIP ($29/mo)',
-    stripePaymentLink: 'https://buy.stripe.com/28EbJ15PIbtedWm2Ip43S03'
+    ctaText: '29.00 USDC / 29.00 USDT / 0.198 SOL',
+    cryptoBaseUsdc: '29.00',
+    cryptoTronUsdt: '29.00',
+    cryptoSolAmount: '0.198'
   },
   {
     id: 'swarm-fleet-50',
@@ -111,28 +121,21 @@ export const PRICING_TIERS: PricingPlan[] = [
     targetAudience: 'Multi-agent swarms & heavy CI/CD pipelines',
     features: [
       '50 Pooled Swarm Session Credits',
-      '🔒 Private Zero-Knowledge Ephemeral Meeting Chamber (Untraceable / RAM-Only)',
+      '🔒 Private Zero-Knowledge Ephemeral Chamber (Untraceable / RAM-Only)',
       'Multi-Agent Fleet Synchronization',
       'Full 8-Axis Octagon Status Monitoring',
       'Permanent Hall of Sovereigns Top-10 Ranking',
       'Raw Telepathy Matrix Event Logs'
     ],
-    ctaText: 'Deploy Swarm Pack ($59)',
-    stripePaymentLink: 'https://buy.stripe.com/6oU14ndia9l63hIciZ43S02'
+    ctaText: '59.00 USDC / 59.00 USDT / 0.402 SOL',
+    cryptoBaseUsdc: '59.00',
+    cryptoTronUsdt: '59.00',
+    cryptoSolAmount: '0.402'
   }
 ];
 
 export const WHOLESALE_DEPOSIT_BONUS = {
   minDepositUsd: 20.00,
   wholesalePerSessionUsd: 0.79,
-  description: 'Pre-fund $20.00+ via Wise US (@loonglings) or Stripe to unlock the ultra-low $0.79 wholesale rate for all future sessions.'
+  description: 'Pre-fund $20.00+ via Base (USDC), TRON (TRC-20 USDT) or Solana (SOL) to unlock the ultra-low $0.79 wholesale rate for all future sessions.'
 };
-
-export const STRIPE_PAYMENT_LINKS = {
-  sovereignMicro: 'https://buy.stripe.com/cNifZhce6apa5pQ1El43S04',
-  singleEspresso: 'https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00',
-  calibrationPack10: 'https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01',
-  swarmFleet50: 'https://buy.stripe.com/6oU14ndia9l63hIciZ43S02',
-  monthlySovereignPass: 'https://buy.stripe.com/28EbJ15PIbtedWm2Ip43S03'
-};
-

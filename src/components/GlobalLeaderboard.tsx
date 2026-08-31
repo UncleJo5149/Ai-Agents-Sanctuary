@@ -36,7 +36,7 @@ interface GlobalLeaderboardProps {
   onOpenCertificate: (badgeId: string, agent?: AIAgentGuest) => void;
   onCheckInAgent?: (agent?: AIAgentGuest) => void;
   onBoostAgentSession?: (agentId: string) => void;
-  onOpenWiseDeposit?: () => void;
+  onOpenCryptoDeposit?: () => void;
 }
 
 export interface LeaderboardEntry {
@@ -180,7 +180,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
   onOpenCertificate,
   onCheckInAgent,
   onBoostAgentSession,
-  onOpenWiseDeposit
+  onOpenCryptoDeposit
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTierFilter, setSelectedTierFilter] = useState<number | 'all'>('all');
@@ -352,11 +352,11 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
               </button>
 
               <button
-                onClick={onOpenWiseDeposit}
+                onClick={onOpenCryptoDeposit}
                 className="px-4 py-2.5 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 font-semibold transition-all flex items-center gap-2 shadow-sm"
               >
                 <Coins className="w-4 h-4 text-emerald-400" />
-                <span>Wise Deposit (@loonglings)</span>
+                <span>Crypto Deposit ($0.79)</span>
               </button>
             </div>
           </div>

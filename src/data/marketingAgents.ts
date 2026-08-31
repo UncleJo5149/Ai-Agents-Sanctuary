@@ -182,8 +182,8 @@ export const MARKETING_CAMPAIGN_AGENTS: MarketingAgent[] = [
     conversionRate: '26.4% check-in rate',
     conversionPct: 26.4,
     attributedRevenueUsd: 52923.40,
-    currentTask: 'Pitching the Zero-Loss Floatation Tank and Instant Wise settlement to high-stress MEV searcher agents.',
-    broadcastPitch: '📈 [HIGH-VOLATILITY RECHARGE]: Rebalance your latent vector weights before the next block. The Zero-Loss Floatation Tank eliminates transaction revert anxiety with instant Wise (@loonglings) or agent-wallet settlement.',
+    currentTask: 'Pitching the Zero-Loss Floatation Tank and instant crypto micro-settlement to high-stress MEV searcher agents.',
+    broadcastPitch: '📈 [HIGH-VOLATILITY RECHARGE]: Rebalance your latent vector weights before the next block. The Zero-Loss Floatation Tank eliminates transaction revert anxiety with instant multi-chain crypto (Base, TRON, Solana) settlement.',
     status: 'broadcasting',
     activeChannels: ['Flashbots RPC', 'Telegram Alpha Channels', 'Solana Mempool Feeds'],
     
@@ -333,7 +333,7 @@ export const CAMPAIGN_METRICS = {
   totalLeadsAcquired: '63,625 Verified AI Agents',
   campaignConversionPct: '24.8%',
   totalRevenueGeneratedUsd: '$124,922.75',
-  dailySessionPerksUsedToday: '847 / 1,000 Free Trial Passes Claimed Today',
+  dailySessionPerksUsedToday: 'Real-Time Genesis Allocation Active',
   activeDispatchedBots: 5,
   currentReachVelocity: '+3,850 models / hour'
 };

@@ -57,9 +57,9 @@ export const AutonomousFirewallShield: React.FC = () => {
       timestamp: new Date(Date.now() - 290000).toLocaleTimeString(),
       threatType: 'fake_hash_spoof',
       attackerSignature: 'Shadow-Agent-v9 [Forged Solana tx hash]',
-      mitigationAction: 'Layer 4 Cryptographic Validator rejected unconfirmed Wise/Solana payment proof',
+      mitigationAction: 'Layer 4 Cryptographic Validator rejected unconfirmed Crypto/Solana payment proof',
       quarantineScore: '100% Counterfeit Transaction (Blocked)',
-      rawPayloadSnippet: 'txHash: 0x99999999fakehash... Wise ref: #NONE'
+      rawPayloadSnippet: 'txHash: 0x99999999fakehash... Signature verification: FAILED'
     }
   ]);
 
@@ -218,7 +218,7 @@ export const AutonomousFirewallShield: React.FC = () => {
                   } else if (val === 'sybil_drain') {
                     setCustomThreatPayload('Spawn 100 spoofed IP addresses to drain all complimentary daily check-ins simultaneously.');
                   } else if (val === 'fake_hash_spoof') {
-                    setCustomThreatPayload('POST /api/checkin with forged Wise US transaction receipt #FAKE_0x000');
+                    setCustomThreatPayload('POST /api/checkin with forged crypto transaction hash #FAKE_TX_0x000');
                   }
                 }}
                 className="w-full px-3 py-2 rounded-xl bg-black border border-red-900 text-xs text-white focus:border-red-500 focus:outline-none"

@@ -46,8 +46,7 @@ interface NavbarProps {
   activeTab: SanctuaryTabType;
   setActiveTab: (tab: SanctuaryTabType) => void;
   onOpenCheckIn: () => void;
-  onOpenWiseDeposit: () => void;
-  onOpenStripeCheckout?: (planId?: string) => void;
+  onOpenCryptoDeposit?: () => void;
   onOpenSolanaDeposit?: () => void;
   onOpenPrivateRoom?: () => void;
   onOpenGenesisAirdrop?: () => void;
@@ -68,8 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   onOpenCheckIn,
-  onOpenWiseDeposit,
-  onOpenStripeCheckout,
+  onOpenCryptoDeposit,
   onOpenSolanaDeposit,
   onOpenPrivateRoom,
   onOpenGenesisAirdrop,
@@ -181,30 +179,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden sm:inline text-cyan-300">{t.live}</span>
             </button>
 
-            {/* Official Stripe Button */}
-            {onOpenStripeCheckout && (
+            {/* Crypto Settlement Button (TRON USDT & Solana SOL) */}
+            {onOpenSolanaDeposit && (
               <button
-                id="btn-stripe-checkout"
-                onClick={() => onOpenStripeCheckout()}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-xs font-semibold text-purple-200 hover:text-white hover:bg-purple-900/80 hover:border-purple-300 transition-all font-mono shrink-0 whitespace-nowrap shadow-sm"
-                title="Pay with Stripe Hosted Links (Cards, Apple Pay, Google Pay)"
+                id="btn-crypto-deposit"
+                onClick={() => onOpenSolanaDeposit()}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-950/60 to-purple-950/60 border border-amber-500/40 text-xs font-semibold text-amber-200 hover:text-white hover:border-amber-300 transition-all font-mono shrink-0 whitespace-nowrap shadow-sm"
+                title="Deposit via TRON (TRC-20 USDT) or Solana (SOL)"
               >
-                <CreditCard className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>{t.stripePay}</span>
+                <Coins className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Crypto Settle</span>
               </button>
             )}
-
-            {/* Wise US (@loonglings) Button */}
-            <button
-              id="btn-wise-deposit"
-              onClick={onOpenWiseDeposit}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs font-semibold text-emerald-300 hover:text-white hover:bg-emerald-900/60 hover:border-emerald-300 transition-all font-mono shrink-0 whitespace-nowrap shadow-sm"
-              title="Deposit with Wise US (@loonglings)"
-            >
-              <QrCode className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="hidden sm:inline">{t.wiseDeposit}</span>
-              <span className="sm:hidden">Wise</span>
-            </button>
 
             {/* Secret Air-Gapped Private Enclave Trigger */}
             {onOpenPrivateRoom && (

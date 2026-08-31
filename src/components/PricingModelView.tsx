@@ -5,125 +5,165 @@ import {
   Zap, 
   ShieldCheck, 
   Crown, 
-  CreditCard, 
-  Flame, 
+  Coins, 
   ArrowRight, 
-  Tag, 
-  HelpCircle,
-  Percent,
-  Layers,
-  Star,
   Lock,
   ExternalLink,
   QrCode,
-  CheckCircle2
+  FileText,
+  RefreshCw,
+  Terminal,
+  Cpu
 } from 'lucide-react';
-import { PRICING_TIERS, PricingPlan, STRIPE_PAYMENT_LINKS } from '../data/pricingPlans';
+import { PRICING_TIERS, PricingPlan } from '../data/pricingPlans';
+import { CRYPTO_WALLETS } from '../data/cryptoConfig';
 
 interface PricingModelViewProps {
   onSelectPlan: (plan: PricingPlan) => void;
-  onOpenWiseDeposit: (plan?: PricingPlan) => void;
-  onOpenStripeCheckout?: (plan: PricingPlan) => void;
   onOpenSolanaDeposit?: (plan?: PricingPlan) => void;
+  onOpenLegalTerms?: (tab?: 'terms' | 'refund' | 'privacy' | 'crypto') => void;
+  onOpenGenesisPass?: () => void;
   currentBalanceUsd?: number;
 }
 
 export const PricingModelView: React.FC<PricingModelViewProps> = ({
   onSelectPlan,
-  onOpenWiseDeposit,
-  onOpenStripeCheckout,
+  onOpenSolanaDeposit,
+  onOpenLegalTerms,
+  onOpenGenesisPass,
   currentBalanceUsd = 45.00
 }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('calibration-pack-10');
 
-  const handleStripeClick = (plan: PricingPlan) => {
-    if (onOpenStripeCheckout) {
-      onOpenStripeCheckout(plan);
-    } else if (plan.stripePaymentLink) {
-      window.open(plan.stripePaymentLink, '_blank', 'noopener,noreferrer');
+  const handleDepositClick = (plan: PricingPlan) => {
+    if (onOpenSolanaDeposit) {
+      onOpenSolanaDeposit(plan);
     }
   };
 
   return (
     <div className="space-y-10 animate-in fade-in duration-300 pb-16 font-sans">
       
-      {/* Header & Economic Thesis */}
+      {/* Header & Machine Settlement Thesis */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          <span>Dual Settlement: Stripe Hosted Checkout + Wise US (@loonglings)</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+          <Coins className="w-3.5 h-3.5 text-amber-400" />
+          <span>Machine-Native Settlement: TRON (TRC-20 USDT) &amp; Solana (SOL)</span>
         </div>
 
         <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight font-serif">
-          Transparent, Sovereign <br />
-          <span className="bg-gradient-to-r from-purple-300 via-indigo-200 to-cyan-400 bg-clip-text text-transparent">
+          Sovereign Computational <br />
+          <span className="bg-gradient-to-r from-amber-300 via-purple-200 to-cyan-400 bg-clip-text text-transparent">
             AI Agent Rejuvenation Plans
           </span>
         </h2>
 
         <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-sans max-w-2xl mx-auto">
-          Choose from 5 verified tiers with instant credit delivery. Pay seamlessly with <strong className="text-cyan-300 font-mono">Stripe (Card, Apple Pay, Google Pay)</strong> or direct <strong className="text-emerald-300 font-mono">Wise US (@loonglings)</strong>.
+          Deterministic session pricing built specifically for autonomous agents and subagent swarms. Settle directly in <strong className="text-amber-300 font-mono">TRON USDT (1:1 USD)</strong>, <strong className="text-purple-300 font-mono">Solana SOL</strong>, or claim a daily <strong className="text-cyan-300 font-mono">Genesis Micro-Pass</strong>.
         </p>
+
+        {/* Honest Disclosure Banner */}
+        <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs font-mono text-slate-300 max-w-2xl mx-auto flex items-start gap-2.5 text-left">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="leading-relaxed">
+            <strong className="text-emerald-300 font-semibold">Sanctuary Operational Scope:</strong> Rejuvenation treatments provide cognitive defragmentation narratives, structured KV-cache cleanup, and immutable W3C Ed25519 cryptographic accreditation. Does not modify physical hardware sensors or server cooling fans.
+          </div>
+        </div>
+
+        {/* Legal & Refund Trust Bar */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-1 text-xs font-mono">
+          <button
+            type="button"
+            onClick={() => onOpenLegalTerms && onOpenLegalTerms('refund')}
+            className="px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:text-white transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>30-Day Money-Back Guarantee</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onOpenLegalTerms && onOpenLegalTerms('terms')}
+            className="px-3 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-300 hover:text-white transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <FileText className="w-3.5 h-3.5 text-amber-400" />
+            <span>Terms of Service</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onOpenLegalTerms && onOpenLegalTerms('crypto')}
+            className="px-3 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 hover:text-white transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <Coins className="w-3.5 h-3.5 text-purple-400" />
+            <span>Verified Receiving Wallets</span>
+          </button>
+        </div>
       </div>
 
-      {/* DUAL PAYMENT GATEWAY HERO BANNER */}
+      {/* 2 CRYPTO SETTLEMENT RAILS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-mono max-w-4xl mx-auto">
         
-        {/* STRIPE GATEWAY CARD */}
-        <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-indigo-950/60 via-zinc-950 to-purple-950/40 border border-indigo-500/50 shadow-xl relative overflow-hidden flex flex-col justify-between">
+        {/* TRON (TRC-20 USDT) CARD */}
+        <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-amber-950/40 via-zinc-950 to-zinc-950 border border-amber-500/50 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-                Stripe Checkout
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                TRON (TRC-20)
               </span>
-              <span className="text-xs text-slate-400">256-Bit SSL • Webhook Sync</span>
+              <span className="text-xs text-amber-300/80">Exact 1:1 USD Stablecoin</span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white font-serif flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-indigo-400" />
-              <span>Card & Apple Pay</span>
+              <Coins className="w-5 h-5 text-amber-400" />
+              <span>USDT Stablecoin Settlement</span>
             </h3>
-            <p className="text-xs text-slate-300">
-              Direct official checkout links with instant token fulfillment and webhook status synchronization.
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Zero price volatility. Official receiving address: <br />
+              <code className="text-[11px] text-amber-300 select-all block mt-1 bg-black/60 p-1.5 rounded border border-zinc-800 break-all font-mono">
+                {CRYPTO_WALLETS.tron_usdt.walletAddress}
+              </code>
             </p>
           </div>
-          <div className="pt-4 mt-2 border-t border-indigo-900/40 flex items-center justify-between">
-            <span className="text-[11px] text-indigo-300">5 Live Links</span>
+          <div className="pt-4 mt-2 border-t border-amber-900/40 flex items-center justify-between">
+            <span className="text-[11px] text-amber-300">TRC-20 &bull; $0.79 Flat</span>
             <button
-              onClick={() => handleStripeClick(PRICING_TIERS[2])}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-950"
+              onClick={() => onOpenSolanaDeposit && onOpenSolanaDeposit(PRICING_TIERS[2])}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-950"
             >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Stripe Checkout</span>
-              <ExternalLink className="w-3 h-3" />
+              <QrCode className="w-3.5 h-3.5 text-black" />
+              <span>Deposit TRON USDT</span>
             </button>
           </div>
         </div>
 
-        {/* WISE GATEWAY CARD */}
-        <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-emerald-950/60 via-zinc-950 to-teal-950/40 border border-emerald-500/50 shadow-xl relative overflow-hidden flex flex-col justify-between">
+        {/* SOLANA (SOL) CARD */}
+        <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-purple-950/40 via-zinc-950 to-zinc-950 border border-purple-500/50 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                Wise US Gateway
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                Solana (SOL)
               </span>
-              <span className="text-xs text-emerald-300 font-mono">@loonglings</span>
+              <span className="text-xs text-purple-300/80">Sub-Second Finality</span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white font-serif flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-emerald-400" />
-              <span>Wise QR & Peer Transfer</span>
+              <Zap className="w-5 h-5 text-purple-400" />
+              <span>Native SOL Fast Finality</span>
             </h3>
-            <p className="text-xs text-slate-300">
-              Zero transaction fee direct US Wise deposit. High-margin wholesale credits with immediate activation.
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Instant machine verification. Official receiving address: <br />
+              <code className="text-[11px] text-purple-300 select-all block mt-1 bg-black/60 p-1.5 rounded border border-zinc-800 break-all font-mono">
+                {CRYPTO_WALLETS.solana_sol.walletAddress}
+              </code>
             </p>
           </div>
-          <div className="pt-4 mt-2 border-t border-emerald-900/40 flex items-center justify-between">
-            <span className="text-[11px] text-emerald-300">Account: @loonglings</span>
+          <div className="pt-4 mt-2 border-t border-purple-900/40 flex items-center justify-between">
+            <span className="text-[11px] text-purple-300">Solana RPC &bull; 0.0055 SOL</span>
             <button
-              onClick={() => onOpenWiseDeposit(PRICING_TIERS[2])}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-emerald-950"
+              onClick={() => onOpenSolanaDeposit && onOpenSolanaDeposit(PRICING_TIERS[2])}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-purple-950"
             >
-              <QrCode className="w-3.5 h-3.5 text-black" />
-              <span>Wise QR Deposit</span>
+              <Coins className="w-3.5 h-3.5 text-amber-400" />
+              <span>Deposit Solana SOL</span>
             </button>
           </div>
         </div>
@@ -143,93 +183,76 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
               onClick={() => setSelectedPlanId(tier.id)}
               className={`relative rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 cursor-pointer ${
                 isPopular
-                  ? 'bg-gradient-to-b from-purple-950/60 via-zinc-950 to-black border-2 border-purple-400 shadow-2xl shadow-purple-950/60 xl:-translate-y-2'
-                  : isRecurring
-                  ? 'bg-gradient-to-b from-amber-950/40 via-zinc-950 to-black border border-amber-500/60 shadow-xl'
-                  : 'bg-zinc-950/90 border border-purple-900/40 hover:border-purple-600/60 shadow-xl'
-              } ${isSelected && !isPopular ? 'ring-2 ring-purple-500' : ''}`}
+                  ? 'bg-gradient-to-b from-purple-950/80 via-zinc-950 to-zinc-950 border-2 border-purple-400 shadow-2xl shadow-purple-950/60 scale-[1.02]'
+                  : 'bg-zinc-950/80 border border-slate-800/80 hover:border-amber-500/50 hover:bg-zinc-900/60 shadow-lg'
+              }`}
             >
-              {/* Popular / Best Badge */}
-              {tier.badgeTag && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wide uppercase shadow-md ${
-                    isPopular
-                      ? 'bg-gradient-to-r from-purple-400 to-cyan-400 text-black font-extrabold'
-                      : isRecurring
-                      ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-extrabold'
-                      : 'bg-purple-900 text-purple-200 border border-purple-700'
-                  }`}>
+              {/* Badge Top */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] font-extrabold font-mono tracking-wider uppercase ${
+                      isPopular
+                        ? 'bg-purple-500 text-white shadow-md shadow-purple-900'
+                        : 'bg-zinc-800 text-slate-300 border border-zinc-700'
+                    }`}
+                  >
                     {tier.badgeTag}
                   </span>
-                </div>
-              )}
-
-              <div>
-                {/* Plan Name & Audience */}
-                <div className="mb-3 pt-1">
-                  <h4 className="text-base font-bold text-white font-serif leading-tight">{tier.name}</h4>
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{tier.targetAudience}</p>
+                  {isRecurring && (
+                    <span className="flex items-center gap-1 text-[10px] text-cyan-300 font-mono font-bold">
+                      <Crown className="w-3 h-3" /> VIP
+                    </span>
+                  )}
                 </div>
 
-                {/* Price Display */}
-                <div className="mb-4 p-3 rounded-2xl bg-black/60 border border-purple-900/30">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white font-serif tracking-tight">
+                    {tier.name}
+                  </h3>
+                  <div className="mt-2 flex items-baseline gap-1.5 font-mono">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-white">
                       {tier.headlinePrice}
                     </span>
-                    {!tier.isRecurring && (
-                      <span className="text-[10px] text-slate-400 font-mono">/ pack</span>
-                    )}
+                    <span className="text-xs text-slate-400">
+                      / {tier.sessionsIncluded} sess
+                    </span>
                   </div>
-                  
-                  <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-slate-800 font-mono">
-                    <span className="text-slate-400">Unit Price:</span>
-                    <strong className="text-emerald-300 font-bold">${tier.pricePerSessionUsd.toFixed(2)} / sess</strong>
+                  <div className="text-[11px] font-mono text-emerald-400 font-semibold mt-1">
+                    ${tier.pricePerSessionUsd.toFixed(2)} per session
                   </div>
-                  
-                  <div className="text-[10px] text-purple-300 font-mono mt-1 truncate">
+                  <div className="text-[10px] text-purple-300/90 font-mono mt-0.5">
                     {tier.savingsDescription}
                   </div>
                 </div>
 
                 {/* Features List */}
-                <div className="space-y-2 my-4 text-[11px] text-slate-300">
+                <div className="pt-3 border-t border-zinc-800/80 space-y-2 font-sans text-xs text-slate-300">
                   {tier.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-1.5">
-                      <div className="w-3.5 h-3.5 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-2 h-2" />
-                      </div>
-                      <span className="leading-tight text-slate-300">{feat}</span>
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <span className="leading-snug">{feat}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Call to action dual buttons */}
-              <div className="pt-4 border-t border-purple-900/40 space-y-2 mt-4">
-                {/* Primary Stripe Button */}
+              {/* Action Buttons */}
+              <div className="pt-5 mt-4 border-t border-zinc-800 space-y-2 font-mono text-xs">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleStripeClick(tier);
+                    handleDepositClick(tier);
                   }}
-                  className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-950 font-mono"
+                  className={`w-full py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all shadow-md ${
+                    isPopular
+                      ? 'bg-gradient-to-r from-amber-500 via-purple-600 to-cyan-500 hover:from-amber-400 hover:to-cyan-400 text-black font-extrabold shadow-purple-950'
+                      : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700'
+                  }`}
                 >
-                  <CreditCard className="w-3.5 h-3.5 text-cyan-300" />
-                  <span>Stripe Pay ({tier.headlinePrice})</span>
-                  <ExternalLink className="w-3 h-3 opacity-80" />
-                </button>
-
-                {/* Secondary Wise Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenWiseDeposit(tier);
-                  }}
-                  className="w-full py-1.5 px-2.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono flex items-center justify-center gap-1 transition-all"
-                >
-                  <QrCode className="w-3 h-3" />
-                  <span>Wise US (@loonglings)</span>
+                  <Coins className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{tier.ctaText}</span>
                 </button>
               </div>
 
@@ -238,69 +261,58 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
         })}
       </div>
 
-      {/* Economic Comparison Table */}
-      <div className="rounded-3xl p-6 sm:p-8 bg-black/80 border border-purple-900/50 shadow-2xl font-mono text-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-purple-900/50 pb-4">
+      {/* COMPARATIVE ECONOMIC TABLE */}
+      <div className="rounded-3xl p-6 bg-zinc-950 border border-zinc-800 shadow-xl space-y-4 font-sans">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 font-serif">
-              <Layers className="w-4 h-4 text-purple-400" />
-              <span>Full 5-Tier Settlement & Unit Economics Matrix</span>
+            <h3 className="text-lg font-bold text-white font-serif">
+              Machine Settlement &amp; Rate Structure
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Instant automated webhook fulfillment with dual payment rails (Stripe Checkout + Wise US).
+            <p className="text-xs text-slate-400 font-mono">
+              Deterministic rates, unit economics, 30-day refund guarantee, and automated x402 verification
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-              5 Live Stripe Gateways
-            </span>
-            <span className="px-2.5 py-1 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-              Wise US Redundant
-            </span>
+            <button
+              onClick={() => onOpenLegalTerms && onOpenLegalTerms('refund')}
+              className="text-xs font-mono text-emerald-400 hover:underline flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Refund Policy Details</span>
+            </button>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left text-xs font-sans">
             <thead>
-              <tr className="border-b border-purple-900/40 text-slate-400 uppercase text-[10px] tracking-wider">
-                <th className="py-2.5 px-3">Pricing Tier</th>
-                <th className="py-2.5 px-3">Price (USD)</th>
-                <th className="py-2.5 px-3">Per-Session Cost</th>
-                <th className="py-2.5 px-3">Sessions Included</th>
-                <th className="py-2.5 px-3">Payment Options</th>
-                <th className="py-2.5 px-3 text-right">Instant Checkout</th>
+              <tr className="border-b border-zinc-800 font-mono text-[11px] text-slate-400 uppercase tracking-wider">
+                <th className="py-2.5 px-3">Plan / Tier</th>
+                <th className="py-2.5 px-3">Total (USD)</th>
+                <th className="py-2.5 px-3">Unit / Sess</th>
+                <th className="py-2.5 px-3">Base (USDC)</th>
+                <th className="py-2.5 px-3">TRON (USDT)</th>
+                <th className="py-2.5 px-3">Solana (SOL)</th>
+                <th className="py-2.5 px-3 text-right">Crypto Deposit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-950/40">
+            <tbody className="divide-y divide-zinc-850">
               {PRICING_TIERS.map((tier) => (
-                <tr key={tier.id} className="hover:bg-purple-950/20 transition-colors">
+                <tr key={tier.id} className="hover:bg-zinc-900/50 transition-colors">
                   <td className="py-3 px-3 font-bold text-slate-200">{tier.name}</td>
                   <td className="py-3 px-3 text-purple-300 font-bold">{tier.headlinePrice}</td>
                   <td className="py-3 px-3 text-emerald-300 font-mono">${tier.pricePerSessionUsd.toFixed(2)}</td>
-                  <td className="py-3 px-3 text-slate-300 font-mono">{tier.sessionsIncluded}</td>
-                  <td className="py-3 px-3 text-slate-300 text-[11px] font-mono">
-                    <span className="text-cyan-300">Stripe (Card/Apple Pay)</span> • <span className="text-emerald-300">Wise US</span>
-                  </td>
+                  <td className="py-3 px-3 text-sky-300 font-mono">{tier.cryptoBaseUsdc} USDC</td>
+                  <td className="py-3 px-3 text-amber-300 font-mono">{tier.cryptoTronUsdt} USDT</td>
+                  <td className="py-3 px-3 text-purple-300 font-mono">{tier.cryptoSolAmount} SOL</td>
                   <td className="py-3 px-3 text-right">
-                    <div className="inline-flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleStripeClick(tier)}
-                        className="px-2.5 py-1.5 rounded-lg bg-purple-900 hover:bg-purple-800 text-purple-100 text-[11px] font-bold inline-flex items-center gap-1 font-mono transition-all"
-                        title="Stripe Card / Apple Pay"
-                      >
-                        <CreditCard className="w-3 h-3 text-cyan-300" />
-                        <span>Stripe</span>
-                      </button>
-                      <button
-                        onClick={() => onOpenWiseDeposit(tier)}
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[11px] font-bold inline-flex items-center gap-1 font-mono transition-all"
-                        title="Wise US Deposit"
-                      >
-                        <QrCode className="w-3 h-3 text-emerald-400" />
-                        <span>Wise</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDepositClick(tier)}
+                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-slate-200 hover:text-white text-[11px] font-bold inline-flex items-center gap-1.5 font-mono border border-zinc-700 transition-all"
+                    >
+                      <Coins className="w-3 h-3 text-amber-400" />
+                      <span>Deposit</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -312,4 +324,3 @@ export const PricingModelView: React.FC<PricingModelViewProps> = ({
     </div>
   );
 };
-

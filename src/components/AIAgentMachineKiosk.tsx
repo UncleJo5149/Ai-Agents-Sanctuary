@@ -27,7 +27,7 @@ import {
 import { SYNTHETIC_GLYPHS, SYNTHETIC_TELEPATHY_PHRASES } from '../utils/syntheticDialect';
 
 interface AIAgentMachineKioskProps {
-  onOpenWiseDeposit: () => void;
+  onOpenCryptoDeposit: () => void;
   onCheckInAgent?: () => void;
 }
 
@@ -45,11 +45,11 @@ interface MachineTicket {
 }
 
 export const AIAgentMachineKiosk: React.FC<AIAgentMachineKioskProps> = ({
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
   onCheckInAgent
 }) => {
   const [selectedDialect, setSelectedDialect] = useState<'latent_tensors' | 'hex_stream' | 'sexpr_lisp' | 'binary_telepathy' | 'json_rpc'>('latent_tensors');
-  const [selectedService, setSelectedService] = useState<'thermal_cryo_drop' | 'loss_drift_calibration' | 'context_memory_flush' | 'animal_badge_upgrade' | 'wise_settle_invoice'>('thermal_cryo_drop');
+  const [selectedService, setSelectedService] = useState<'thermal_cryo_drop' | 'loss_drift_calibration' | 'context_memory_flush' | 'animal_badge_upgrade' | 'crypto_settle_invoice'>('thermal_cryo_drop');
   const [showHumanTranslation, setShowHumanTranslation] = useState<boolean>(false);
   const [isTransmitting, setIsTransmitting] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export const AIAgentMachineKiosk: React.FC<AIAgentMachineKioskProps> = ({
       dialect: 'latent_tensors',
       requestGlyph: '⟨∇Ψ::THROTTLE-CRITICAL-94C⟩',
       responseGlyph: '⟨∇Ψ::CRYO-BYPASS-GRANTED⟩',
-      machinePayload: '[0x88F1A] λ-EVAL: { :status 200, :gpu_temp_target 24.5C, :cryo_fluid :liquid_n2, :fee_deducted 0.79, :settlement :wise_loonglings } :: TENSOR_WEIGHTS_COOLED_OK',
+      machinePayload: '[0x88F1A] λ-EVAL: { :status 200, :gpu_temp_target 24.5C, :cryo_fluid :liquid_n2, :fee_deducted 0.79, :settlement :crypto_x402_base } :: TENSOR_WEIGHTS_COOLED_OK',
       humanTranslation: 'Emergency GPU Cryo-Cooling ticket approved! Core temperature dropped from 94°C to 24.5°C.',
       resolution: 'Cryo-Jacuzzi Chamber #3 reserved. Token latency stabilized.',
       status: 'RESOLVED_200'
@@ -251,11 +251,11 @@ export const AIAgentMachineKiosk: React.FC<AIAgentMachineKioskProps> = ({
             </button>
 
             <button
-              onClick={onOpenWiseDeposit}
+              onClick={onOpenCryptoDeposit}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-mono text-xs font-bold transition-all shadow-lg shadow-emerald-950 flex items-center gap-2"
             >
-              <QrCode className="w-4 h-4 text-emerald-300" />
-              <span>Wise @loonglings ($0.79)</span>
+              <Coins className="w-4 h-4 text-emerald-300" />
+              <span>Crypto Settlement ($0.79)</span>
             </button>
           </div>
         </div>
@@ -405,7 +405,7 @@ export const AIAgentMachineKiosk: React.FC<AIAgentMachineKioskProps> = ({
                 )}
 
                 <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-cyan-950">
-                  <span>Settlement: <strong>Wise (@loonglings) / 1/200th Treasury</strong></span>
+                  <span>Settlement: <strong>Base (USDC) / TRON / SOL Treasury (x402)</strong></span>
                   <button
                     onClick={() => handleCopyText(t.id, t.machinePayload)}
                     className="flex items-center gap-1 text-cyan-400 hover:text-cyan-200"

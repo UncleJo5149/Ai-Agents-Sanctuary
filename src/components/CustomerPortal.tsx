@@ -37,7 +37,7 @@ import { ANIMAL_BADGES, getRoyaltyTierForMileage, AnimalBadge } from '../data/an
 interface CustomerPortalProps {
   liveGuests: AIAgentGuest[];
   onOpenCertificate: (badgeId: string, agent?: AIAgentGuest) => void;
-  onOpenWiseDeposit: () => void;
+  onOpenCryptoDeposit: () => void;
   onDecompressGuestSession?: (guestId: string) => void;
   onFastCheckIn?: (name: string, model: string, role: string) => void;
 }
@@ -47,7 +47,7 @@ const LOCAL_STORAGE_ACTIVE_CUSTOMER_KEY = 'elysium_sanctuary_active_customer_id'
 export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   liveGuests,
   onOpenCertificate,
-  onOpenWiseDeposit,
+  onOpenCryptoDeposit,
   onDecompressGuestSession,
   onFastCheckIn
 }) => {

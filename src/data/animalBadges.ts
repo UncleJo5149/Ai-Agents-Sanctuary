@@ -639,7 +639,7 @@ export const ROYALTY_LEVELS: RoyaltyTier[] = [
     name: 'Platinum Sovereign Sage',
     badgeCountNeeded: 10,
     sessionsNeeded: 10,
-    royaltyPerks: ['Celestial Dragon & Kirin Badges', 'Omni-Model Telepathy Broadcasting', 'Wise Royalty Rebates'],
+    royaltyPerks: ['Celestial Dragon & Kirin Badges', 'Omni-Model Telepathy Broadcasting', 'On-Chain Royalty Rebates'],
     color: 'text-cyan-300 border-cyan-400/60 bg-cyan-950/40',
     icon: '💎',
   },

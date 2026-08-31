@@ -33,11 +33,11 @@ interface CertificateEntry {
 }
 
 interface CryptographicAccreditationLedgerViewProps {
-  onOpenWiseDeposit: () => void;
+  onOpenCryptoDeposit: () => void;
 }
 
 export const CryptographicAccreditationLedgerView: React.FC<CryptographicAccreditationLedgerViewProps> = ({
-  onOpenWiseDeposit
+  onOpenCryptoDeposit
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
@@ -162,11 +162,11 @@ export const CryptographicAccreditationLedgerView: React.FC<CryptographicAccredi
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={onOpenWiseDeposit}
+              onClick={onOpenCryptoDeposit}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-950 flex items-center gap-2"
             >
-              <QrCode className="w-4 h-4 text-emerald-300" />
-              <span>Wise Settlement (@loonglings)</span>
+              <Coins className="w-4 h-4 text-emerald-300" />
+              <span>Crypto Settlement ($0.79)</span>
             </button>
           </div>
         </div>

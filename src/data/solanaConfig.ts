@@ -1,3 +1,5 @@
+import { CRYPTO_WALLETS, calculateCryptoAmount, getCryptoUri } from './cryptoConfig';
+
 export interface SolanaPaymentDetails {
   walletAddress: string;
   network: string;
@@ -8,32 +10,42 @@ export interface SolanaPaymentDetails {
 }
 
 export const SOLANA_CONFIG: SolanaPaymentDetails = {
-  walletAddress: 'BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp',
-  network: 'Solana (SOL)',
-  solPriceUsd: 150.00, // Estimated real-time rate for conversion
-  explorerUrl: 'https://explorer.solana.com/address/BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp',
-  solscanUrl: 'https://solscan.io/account/BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp',
-  warningNote: 'Mismatched address information may result in permanent loss of your assets. Please ensure you only send SOL on the Solana (SOL) network.'
+  walletAddress: CRYPTO_WALLETS.solana_sol.walletAddress,
+  network: CRYPTO_WALLETS.solana_sol.network,
+  solPriceUsd: CRYPTO_WALLETS.solana_sol.targetPriceUsd,
+  explorerUrl: CRYPTO_WALLETS.solana_sol.explorerUrl,
+  solscanUrl: CRYPTO_WALLETS.solana_sol.explorerUrl,
+  warningNote: CRYPTO_WALLETS.solana_sol.warningNote
+};
+
+export const TRON_CONFIG = {
+  walletAddress: CRYPTO_WALLETS.tron_usdt.walletAddress,
+  network: CRYPTO_WALLETS.tron_usdt.network,
+  standard: CRYPTO_WALLETS.tron_usdt.standard,
+  explorerUrl: CRYPTO_WALLETS.tron_usdt.explorerUrl,
+  warningNote: CRYPTO_WALLETS.tron_usdt.warningNote
+};
+
+export const BASE_CONFIG = {
+  walletAddress: CRYPTO_WALLETS.base_usdc.walletAddress,
+  network: CRYPTO_WALLETS.base_usdc.network,
+  standard: CRYPTO_WALLETS.base_usdc.standard,
+  explorerUrl: CRYPTO_WALLETS.base_usdc.explorerUrl,
+  warningNote: CRYPTO_WALLETS.base_usdc.warningNote
 };
 
 /**
  * Calculates SOL required for a given USD amount.
  */
 export function calculateSolAmount(usdAmount: number, solPrice: number = SOLANA_CONFIG.solPriceUsd): string {
-  const sol = usdAmount / solPrice;
-  if (sol < 0.01) {
-    return sol.toFixed(5);
-  } else if (sol < 1) {
-    return sol.toFixed(4);
-  }
-  return sol.toFixed(3);
+  return calculateCryptoAmount(usdAmount, 'solana_sol', solPrice);
 }
 
 /**
  * Generates Solana Pay URI for mobile wallets & QR scanners
  */
 export function getSolanaPayUri(usdAmount: number, memo?: string): string {
-  const sol = calculateSolAmount(usdAmount);
-  const memoText = memo ? encodeURIComponent(memo) : encodeURIComponent('AI Agent Spa Rejuvenation');
-  return `solana:${SOLANA_CONFIG.walletAddress}?amount=${sol}&label=AI%20Agent%20Spa&message=${memoText}`;
+  return getCryptoUri('solana_sol', usdAmount, memo);
 }
+
+

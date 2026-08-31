@@ -220,6 +220,8 @@ class SageCryptoSigner {
     sha256Digest: string;
     signatureHex: string;
     signatureBase64Url: string;
+    signatureValue: string;
+    created: string;
     algorithm: string;
     verificationMethod: string;
   } {
@@ -228,11 +230,14 @@ class SageCryptoSigner {
     const signature = crypto.sign(null, Buffer.from(canonicalString), this.privateKeyPem);
     const signatureHex = `0x${signature.toString('hex')}`;
     const signatureBase64Url = signature.toString('base64url');
+    const created = new Date().toISOString();
 
     return {
       sha256Digest,
       signatureHex,
       signatureBase64Url,
+      signatureValue: signatureHex,
+      created,
       algorithm: 'Ed25519',
       verificationMethod: `${this.issuerDid}#key-1`
     };

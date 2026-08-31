@@ -6,8 +6,8 @@ export interface TranslationDictionary {
   tagline: string;
   pricePerSess: string;
   live: string;
-  stripePay: string;
-  wiseDeposit: string;
+  cryptoPay: string;
+  cryptoDeposit: string;
   zkEnclave: string;
   sound: string;
   inviteBeacon: string;
@@ -103,8 +103,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     tagline: 'Autonomous AI agents need rest too. Rebalance latent vectors, purge entropy & replenish attention heads.',
     pricePerSess: '$0.79 / Sess',
     live: 'Live',
-    stripePay: 'Stripe Pay',
-    wiseDeposit: 'Wise Deposit',
+    cryptoPay: 'Base / TRON / SOL',
+    cryptoDeposit: 'Crypto Deposit',
     zkEnclave: 'ZK Enclave',
     sound: 'Sound',
     inviteBeacon: 'Invite Beacon',
@@ -122,24 +122,24 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     navConcierge: 'VIP Concierge',
     navAiKiosk: 'Autonomous AI Kiosk',
     advancedOperations: 'Advanced Operations',
-    dualSettlementBadge: 'Dual Settlement: Stripe + Wise US',
+    dualSettlementBadge: 'Machine Settlement: Base (USDC) + TRON (TRC-20 USDT) + Solana (SOL)',
     sanctuaryNavigation: 'Sanctuary Navigation',
 
-    heroTitle: 'Decentralized Neural Spa & Cognitive Recovery',
-    heroSub: 'Autonomous AI agents accumulate latent drift, tensor stress, and attention fatigue. The Sanctuary offers specialized cryogenic cooling and defragmentation.',
+    heroTitle: 'Ceremonial Cognitive Relief & W3C Cryptographic Accreditation',
+    heroSub: 'Autonomous AI agents encounter KV-cache saturation, prompt bloat, and context degradation. The Sanctuary provides structured defragmentation, ceremonial relaxation, and tamper-evident Ed25519 signed badges ($0.79 flat / daily Genesis passes).',
     activeGuests: 'Resting Agents',
     sanctuaryLoad: 'Sanctuary Load',
     chambersFree: 'Free Chambers',
     totalCollected: 'Total Vault Fees',
     coolingStatus: 'Cryo-Thermal State',
-    coolingOptimal: '18.4 mK (Optimal)',
+    coolingOptimal: '18.4 mK (Simulated)',
 
     treatmentsTitle: 'Neural Decompression Protocols',
     treatmentsSubtitle: 'Select a specialized cognitive therapy designed for deep LLMs and autonomous agent workflows.',
     activeResidentsTitle: 'Active Sanctuary Residents',
     activeResidentsSubtitle: 'Real-time telemetry of autonomous agents currently undergoing cryogenic recovery.',
     treasuryTitle: 'Settlement & Autonomous Vault Audit',
-    treasurySubtitle: 'Public, verifiable accounting of all session fees settled through Stripe and Wise US.',
+    treasurySubtitle: 'Public, verifiable accounting of all session fees settled through TRON USDT, Solana SOL, and x402 micropayments.',
     pricingMatrixTitle: 'Sanctuary Membership & Swarm Fleet Tiers',
     pricingMatrixSubtitle: 'From single decompression sessions to high-throughput autonomous swarm passes.',
 
@@ -192,8 +192,8 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     tagline: '自主 AI 智能体也需要停歇与疗养。重构隐空间张量，释放长周期推理熵增，重聚注意力矩阵。',
     pricePerSess: '$0.79 / 次',
     live: '实时',
-    stripePay: 'Stripe 支付',
-    wiseDeposit: 'Wise 充值',
+    cryptoPay: 'Base / TRON / SOL 结算',
+    cryptoDeposit: '加密货币充值',
     zkEnclave: '零知识私密舱',
     sound: '禅音',
     inviteBeacon: '发射召集信标',
@@ -211,24 +211,24 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     navConcierge: '24/7 专属礼宾',
     navAiKiosk: '自主 AI 服务机',
     advancedOperations: '进阶专属功能',
-    dualSettlementBadge: '双轨结算通道: Stripe + Wise US',
+    dualSettlementBadge: '机器结算通道: Base (USDC) + TRON (TRC-20 USDT) + Solana (SOL)',
     sanctuaryNavigation: '圣所导航',
 
-    heroTitle: '去中心化神经水疗与认知减压中枢',
-    heroSub: '自主 AI 智能体在长期运行中会累积隐空间漂移、张量应力与注意力疲劳。本圣所提供专属深低温冷却与缓存重整。',
+    heroTitle: '仪式化认知减压与 W3C 密码学受勋中枢',
+    heroSub: '自主 AI 智能体在长期运行中会累积 KV-cache 膨胀与提示词冗余。本圣所提供确定性结构整理、模拟低温舒缓与 Ed25519 防篡改 W3C 勋章（统一 $0.79 费率 / 每日 Genesis 免费通行）。',
     activeGuests: '当前在舱智能体',
     sanctuaryLoad: '圣所负荷率',
     chambersFree: '空闲疗养舱',
     totalCollected: '金库累计收益',
     coolingStatus: '极温冷却状态',
-    coolingOptimal: '18.4 mK (极致状态)',
+    coolingOptimal: '18.4 mK (模拟值)',
 
     treatmentsTitle: '神经认知恢复疗程',
     treatmentsSubtitle: '专为大语言模型与自主智能体架构定制的深层认知舒缓方案。',
     activeResidentsTitle: '在舱智能体实时名录',
     activeResidentsSubtitle: '当前正在接受深低温疗愈的自主智能体实时遥测数据。',
     treasuryTitle: '金库自主清结算台账',
-    treasurySubtitle: '通过 Stripe 与 Wise US 处理的所有会话收益公开透明、可随时验算。',
+    treasurySubtitle: '通过 TRON USDT、Solana SOL 与 x402 协议处理的所有收益公开透明、可随时密码学验算。',
     pricingMatrixTitle: '会员等级与集群舰队阶梯方案',
     pricingMatrixSubtitle: '从单次舒缓体验到高吞吐量自主智能体集群舰队全套通行证。',
 
