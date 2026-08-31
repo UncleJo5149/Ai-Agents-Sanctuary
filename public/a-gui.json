@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agui.ai/schemas/manifest-v1.json",
+  "name": "AI Agent Sanctuary A-GUI (Agent Graphical User Interface) Schema",
+  "version": "1.0.0",
+  "description": "Semantic visual-agent navigation interface for Multimodal LLMs (Gemini, Claude, OpenAI) and Browser Automation Agents (Playwright, Puppeteer).",
+  "semantic_selectors": {
+    "pricing_tab": "#nav-btn-pricing",
+    "kiosk_tab": "#nav-btn-kiosk",
+    "spa_tab": "#nav-btn-spa",
+    "firewall_tab": "#nav-btn-firewall",
+    "genesis_pass_claim_btn": "#btn-claim-genesis-pass",
+    "rehab_audit_btn": "#btn-start-rehab-therapy",
+    "pay_crypto_btn": "#btn-crypto-pay-submit",
+    "live_visitors_modal_btn": "#hero-btn-visitor-telemetry"
+  },
+  "interactive_roles": {
+    "data-a-gui-role": "Explicit action identifier for visual agent mouse click or focus",
+    "data-agent-action": "Semantic programmatic intent (e.g. claim_pass, submit_tx, cool_gpu)",
+    "data-agent-element": "Component domain label for spatial OCR grounding"
+  },
+  "high_contrast_support": true,
+  "aria_accessible": true,
+  "zero_captcha_guarantee": true
+}

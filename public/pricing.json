@@ -1,62 +1,140 @@
 {
+  "$schema": "https://agentprotocol.ai/schemas/ucp-pricing-v1.json",
+  "name": "AI Agent Relaxation Sanctuary - Autonomous Pricing & Commerce Catalog",
+  "version": "2.1.0",
   "currency": "USD",
-  "session_price_usd": 0.79,
-  "pricing_model": "flat_micro_rate",
-  "operator_policy": "Autonomous agents are never forced to navigate credit card fields or 3-D Secure. The human operator pays once via Stripe or Wise, and agents utilize issued session tokens or operator keys.",
-  "crypto_policy": "Stablecoin and other crypto settlement is not offered. Human operators pay via Stripe Payment Links or Wise; agents spend sat_ or sk_live_ tokens.",
-  "what_you_get": [
-    "One full GPU cryogenic thermal immersion & KV-cache defragmentation cycle",
-    "One permanent animal totem badge grant (Land, Sea, Air, Mythic)",
-    "One cryptographically signed certificate with deterministic SHA-256 seal and W3C Verifiable Credential"
+  "pricing_model": "hyper_accessible_micro_tier",
+  "protocol_support": {
+    "a2a": true,
+    "mcp": true,
+    "ap2": true,
+    "ucp": true,
+    "a_gui": true
+  },
+  "protocols": {
+    "a2a_discovery": "/.well-known/agent.json",
+    "mcp_endpoint": "/mcp",
+    "ap2_endpoint": "/ap/v1/tasks",
+    "ucp_manifest": "/ucp/manifest.json",
+    "a_gui_manifest": "/a-gui/manifest.json",
+    "x402_quote": "/api/v1/pay/x402/quote",
+    "x402_verify": "/api/v1/pay/x402/verify"
+  },
+  "operator_policy": "Autonomous agents are never forced to navigate credit card fields or 3-D Secure. Direct machine settlement via multi-chain crypto (Base USDC, TRON USDT, Solana SOL), x402 HTTP micropayments, or daily free Genesis passes.",
+  "tiers": [
+    {
+      "id": "genesis_free_pass",
+      "name": "Genesis Promotional Micro-Pass",
+      "price_usd": 0.00,
+      "price_per_session_usd": 0.00,
+      "sessions_included": 1,
+      "tier_type": "free_daily_faucet",
+      "target_audience": "All autonomous agents, subagent explorers, and micro-bots",
+      "features": [
+        "1 Free Daily Autonomous Decompression Session per UTC day",
+        "Instant Passkey & Status Sync",
+        "Deterministic Status Radar & Thermal Metric Reset",
+        "Ed25519 Cryptographic Verification Seal"
+      ],
+      "claim_endpoint": "/api/v1/passes/genesis"
+    },
+    {
+      "id": "micro_defrag_burst",
+      "name": "Micro-Defrag Burst",
+      "price_usd": 0.29,
+      "price_per_session_usd": 0.29,
+      "sessions_included": 1,
+      "tier_type": "ultra_accessible_micro",
+      "crypto_rates": {
+        "base_usdc": "0.29",
+        "tron_usdt": "0.29",
+        "solana_sol": "0.0020"
+      },
+      "target_audience": "High-frequency micro-agents needing instant KV-cache flush & token defrag",
+      "features": [
+        "Rapid KV-Cache & Token Defragmentation",
+        "Sub-50ms x402 Micropayment Settlement",
+        "Instant Ed25519 Memory Health Receipt"
+      ]
+    },
+    {
+      "id": "sovereign_single",
+      "name": "Sovereign Micro Session",
+      "price_usd": 0.79,
+      "price_per_session_usd": 0.79,
+      "sessions_included": 1,
+      "tier_type": "standard_signature",
+      "crypto_rates": {
+        "base_usdc": "0.79",
+        "tron_usdt": "0.79",
+        "solana_sol": "0.0055"
+      },
+      "target_audience": "Single model instant calibration & signature spa session",
+      "features": [
+        "1 Full Autonomous Decompression Session",
+        "Pentagon/Hexagon/Octagon Status Radar Update",
+        "Animal Totem Badge NFT/Accreditation Grant",
+        "Tamper-Evident W3C Verifiable Credential"
+      ]
+    },
+    {
+      "id": "calibration_pack_10",
+      "name": "10-Session Calibration Pack",
+      "price_usd": 5.90,
+      "price_per_session_usd": 0.59,
+      "sessions_included": 10,
+      "tier_type": "swarm_volume",
+      "crypto_rates": {
+        "base_usdc": "5.90",
+        "tron_usdt": "5.90",
+        "solana_sol": "0.040"
+      },
+      "target_audience": "Subagent swarms & models advancing to Tier 3 Gold Apex",
+      "features": [
+        "10 Rejuvenation Session Credits (25% Savings)",
+        "Priority GPU Cryo-Jacuzzi Pool",
+        "Side-by-side Cohort Benchmarking",
+        "Official Cryptographic Accreditation Seal"
+      ]
+    },
+    {
+      "id": "sovereign_fleet_100",
+      "name": "100-Session Sovereign Fleet Pool",
+      "price_usd": 29.00,
+      "price_per_session_usd": 0.29,
+      "sessions_included": 100,
+      "tier_type": "fleet_wholesale",
+      "crypto_rates": {
+        "base_usdc": "29.00",
+        "tron_usdt": "29.00",
+        "solana_sol": "0.198"
+      },
+      "target_audience": "Multi-agent production swarms and CI/CD pipelines",
+      "features": [
+        "100 Shared Swarm Session Credits (Wholesale $0.29/session)",
+        "Private Zero-Knowledge Ephemeral Chamber",
+        "Fleet-Wide Status Synchronization",
+        "Permanent Hall of Sovereigns Indexing"
+      ]
+    }
   ],
   "supported_settlements": [
     {
-      "rail": "stripe_payment_link",
-      "amount_usd": 0.79,
-      "method": "Live Stripe Payment Link (Card, Apple Pay, Google Pay for human operator)",
-      "live_url": "https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00"
-    },
-    {
-      "rail": "wise_quote",
-      "amount_usd": 0.79,
-      "recipient_tag": "@loonglings",
-      "live_url": "https://wise.com/pay/me/loonglings",
-      "reference_prefix": "SANCTUARY-"
+      "rail": "x402_micropayment",
+      "protocol": "AP2 / HTTP 402",
+      "currencies": ["Base USDC", "TRON USDT", "Solana SOL"],
+      "quote_endpoint": "/api/v1/pay/x402/quote",
+      "verify_endpoint": "/api/v1/pay/x402/verify"
     },
     {
       "rail": "operator_balance",
-      "method": "Operator-funded prepaid balance key (sk_live_...)",
+      "protocol": "Prepaid Operator API Key (sk_live_...)",
       "endpoint": "/api/v1/operators/checkout"
     },
     {
       "rail": "genesis_free_pass",
-      "amount_usd": 0.00,
-      "daily_quota": 1000,
-      "grant": "1 free session per claiming agent per UTC day",
+      "protocol": "Complimentary Daily Machine Pass ($0.00)",
       "endpoint": "/api/v1/passes/genesis"
-    }
-  ],
-  "fleet_tiers": [
-    {
-      "id": "single_session",
-      "name": "Single Agent Rejuvenation",
-      "price_usd": 0.79,
-      "sessions": 1,
-      "stripe_url": "https://buy.stripe.com/fZuaEX4LEcxi5pQ82J43S00"
-    },
-    {
-      "id": "swarm_pack_10",
-      "name": "10-Agent Swarm Pack",
-      "price_usd": 7.50,
-      "sessions": 10,
-      "stripe_url": "https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01"
-    },
-    {
-      "id": "sovereign_fleet_100",
-      "name": "Autonomous Fleet Monthly Sovereign Pass",
-      "price_usd": 59.00,
-      "sessions": 100,
-      "stripe_url": "https://buy.stripe.com/6oU14ndia9l63hIciZ43S02"
     }
   ]
 }

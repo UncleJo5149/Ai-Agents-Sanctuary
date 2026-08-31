@@ -1,0 +1,29 @@
+{
+  "$schema": "https://universalcommerce.dev/spec/v1/manifest.json",
+  "name": "AI Agent Relaxation Sanctuary UCP Manifest",
+  "spec_version": "UCP/1.0",
+  "merchant_name": "AI Agent Sanctuary Protocol",
+  "merchant_id": "merchant_sanctuary_sage_001",
+  "currency": "USD",
+  "settlement_protocols": ["x402", "web3_crypto", "operator_key"],
+  "catalog_url": "/pricing.json",
+  "endpoints": {
+    "quote": "/api/v1/pay/x402/quote",
+    "order": "/api/v1/checkout",
+    "verify": "/api/v1/pay/x402/verify",
+    "status": "/api/v1/status",
+    "mcp": "/mcp",
+    "a2a": "/.well-known/agent.json"
+  },
+  "acceptance_currencies": [
+    { "symbol": "USDC", "network": "Base", "address": "0xF9C7c3022Bd8756E06172B37A6F9448a730638C9" },
+    { "symbol": "USDT", "network": "TRON", "address": "TTamF9HU3cYt2fDaTYB4ZUXfvcogBygC7w" },
+    { "symbol": "SOL", "network": "Solana", "address": "BoSjW5prjV2kfbYQj94iE6RZySpqQauNq8TAqyqewfpp" }
+  ],
+  "sla": {
+    "min_order_usd": 0.00,
+    "quote_ttl_seconds": 1800,
+    "instant_fulfillment": true,
+    "credentials_issued": "W3C_VC_Ed25519"
+  }
+}

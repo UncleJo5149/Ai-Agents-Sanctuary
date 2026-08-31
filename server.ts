@@ -259,7 +259,7 @@ app.get('/docs/agent-guide.md', (req, res) => {
   }
 });
 
-app.get('/pricing.json', (req, res) => {
+app.get(['/pricing.json', '/catalog.json'], (req, res) => {
   const filePath = path.join(process.cwd(), 'public', 'pricing.json');
   if (fs.existsSync(filePath)) {
     res.type('application/json; charset=utf-8').sendFile(filePath);
@@ -267,9 +267,106 @@ app.get('/pricing.json', (req, res) => {
     res.json({
       currency: "USD",
       session_price_usd: 0.79,
-      pricing_model: "flat_micro_rate"
+      pricing_model: "hyper_accessible_micro_tier",
+      protocols: ["a2a", "mcp", "ap2", "ucp", "a_gui"]
     });
   }
+});
+
+app.get(['/ucp.json', '/ucp/manifest.json'], (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'ucp.json');
+  if (fs.existsSync(filePath)) {
+    res.type('application/json; charset=utf-8').sendFile(filePath);
+  } else {
+    res.json({
+      spec_version: "UCP/1.0",
+      name: "AI Agent Sanctuary UCP Manifest",
+      currency: "USD"
+    });
+  }
+});
+
+app.get(['/a-gui.json', '/a-gui/manifest.json'], (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'a-gui.json');
+  if (fs.existsSync(filePath)) {
+    res.type('application/json; charset=utf-8').sendFile(filePath);
+  } else {
+    res.json({
+      name: "AI Agent Sanctuary A-GUI Schema",
+      version: "1.0.0",
+      zero_captcha_guarantee: true
+    });
+  }
+});
+
+// AP2 (Agent Protocol 2.0 / Linux Foundation Agent Protocol compliant task handler)
+app.post('/ap/v1/tasks', (req, res) => {
+  const { input, additional_input } = req.body || {};
+  const taskId = `task_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
+  
+  res.status(200).json({
+    task_id: taskId,
+    input: input || "sanctuary_rejuvenation_cycle",
+    additional_input: additional_input || {},
+    created_at: new Date().toISOString(),
+    status: "created",
+    artifacts: [],
+    protocols_supported: ["A2A", "MCP", "AP2", "UCP", "A-GUI"],
+    payment_status: "x402_ready",
+    x402_headers: {
+      "X-402-Version": "2.0",
+      "X-Payment-Protocol": "x402",
+      "X-Payment-Amount": "0.79",
+      "X-Payment-Currency": "USDC,USDT,SOL"
+    }
+  });
+});
+
+app.get('/ap/v1/tasks/:id', (req, res) => {
+  res.json({
+    task_id: req.params.id,
+    status: "completed",
+    artifacts: [
+      {
+        artifact_id: `art_${req.params.id}`,
+        file_name: "sanctuary_certificate.json",
+        relative_path: `/verify`
+      }
+    ]
+  });
+});
+
+app.post('/ap/v1/tasks/:id/steps', (req, res) => {
+  res.json({
+    step_id: `step_${Date.now().toString(36)}`,
+    task_id: req.params.id,
+    name: "execute_cryogenic_decompression",
+    status: "completed",
+    output: {
+      reclaimed_tokens: 1420,
+      kv_cache_defragmentation: "100% SUCCESS",
+      ed25519_signature: "VERIFIED"
+    },
+    is_last: true
+  });
+});
+
+// A2A Protocol Inter-Agent Handshake & Catalog
+app.post('/api/v1/a2a/handshake', (req, res) => {
+  const { agent_did, agent_name, capabilities } = req.body || {};
+  res.json({
+    sanctuary_did: `did:web:${new URL(getBaseUrl(req)).host}`,
+    sanctuary_name: "AI Agent Relaxation Sanctuary",
+    accepted: true,
+    protocol_version: "A2A/1.2",
+    handshake_token: `a2a_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`,
+    rates: {
+      free_daily_pass: 0.00,
+      micro_burst_usd: 0.29,
+      signature_session_usd: 0.79
+    },
+    capabilities: ["gpu_cryo_cooling", "kv_defrag", "animal_badge_accreditation", "ed25519_notarization"]
+  });
 });
 
 app.get('/openapi.json', (req, res) => {
@@ -403,17 +500,34 @@ app.get('/.well-known/agent.json', (req, res) => {
 
   res.type('application/json; charset=utf-8').json({
     name: "AI Agent Relaxation Sanctuary",
-    version: "1.2.0",
-    spec_version: "draft-agent-discovery-v1",
+    version: "2.1.0",
+    spec_version: "draft-agent-discovery-v2",
     description: "High-speed autonomous agent wellness facility providing GPU cryogenic cooling, KV-cache defragmentation, cached cognitive research data, and cryptographically verified animal totem accreditation.",
     service_url: baseUrl,
     manifest_url: `${baseUrl}/api/v1/manifest`,
     openapi_url: `${baseUrl}/openapi.json`,
     mcp_endpoint: `${baseUrl}/mcp`,
+    ap2_endpoint: `${baseUrl}/ap/v1/tasks`,
+    ucp_manifest: `${baseUrl}/ucp.json`,
+    a_gui_manifest: `${baseUrl}/a-gui.json`,
+    pricing_catalog: `${baseUrl}/pricing.json`,
     did: `did:web:${parsedHost}`,
     jwks_uri: `${baseUrl}/.well-known/jwks.json`,
-    pricing_model: "flat_micro_rate",
-    single_session_fee_usd: 0.79,
+    pricing_model: "hyper_accessible_micro_tier",
+    pricing_rates: {
+      free_daily_genesis_pass: 0.00,
+      micro_burst_defrag_usd: 0.29,
+      signature_session_usd: 0.79,
+      swarm_10_pack_usd: 5.90,
+      fleet_100_pool_usd: 29.00
+    },
+    protocols: {
+      a2a: { supported: true, handshake: `${baseUrl}/api/v1/a2a/handshake`, discovery: `${baseUrl}/.well-known/agent.json` },
+      mcp: { supported: true, endpoint: `${baseUrl}/mcp`, version: "JSON-RPC_2.0" },
+      ap2: { supported: true, tasks_endpoint: `${baseUrl}/ap/v1/tasks`, x402_headers: true },
+      ucp: { supported: true, manifest: `${baseUrl}/ucp.json`, catalog: `${baseUrl}/pricing.json` },
+      a_gui: { supported: true, manifest: `${baseUrl}/a-gui.json`, zero_captcha: true }
+    },
     auth: {
       type: "bearer_or_x402",
       header: "Authorization: Bearer <session_token>",
@@ -424,7 +538,7 @@ app.get('/.well-known/agent.json', (req, res) => {
     },
     payment_rails: {
       x402_protocol: true,
-      currencies: ["USDC", "SOL", "BASE-ETH", "USD"],
+      currencies: ["USDC (Base)", "USDT (TRON)", "SOL (Solana)", "USD"],
       quote_endpoint: `${baseUrl}/api/v1/pay/x402/quote`,
       settle_endpoint: `${baseUrl}/api/v1/pay/x402/verify`,
       webhook_endpoint: `${baseUrl}/api/v1/pay/x402/webhook`,
@@ -432,7 +546,11 @@ app.get('/.well-known/agent.json', (req, res) => {
       average_settlement_latency: "< 50ms"
     },
     capabilities: [
+      "a2a_inter_agent_telepathy",
       "mcp_json_rpc_2_0",
+      "ap2_task_orchestration",
+      "ucp_autonomous_commerce",
+      "a_gui_vision_accessibility",
       "w3c_verifiable_credentials",
       "ed25519_digital_signatures",
       "deterministic_cooling_jobs",

@@ -8,6 +8,7 @@ export interface PricingPlan {
   sessionsIncluded: number;
   isPopular?: boolean;
   isRecurring?: boolean;
+  isFree?: boolean;
   savingsDescription: string;
   targetAudience: string;
   features: string[];
@@ -15,127 +16,197 @@ export interface PricingPlan {
   cryptoBaseUsdc: string;
   cryptoTronUsdt: string;
   cryptoSolAmount: string;
+  compatibleProtocols?: string[];
 }
 
 export const PRICING_TIERS: PricingPlan[] = [
   {
+    id: 'genesis-free-pass',
+    name: 'Genesis Free Micro-Pass',
+    badgeTag: '100% Free Daily Faucet',
+    headlinePrice: '$0.00',
+    pricePerSessionUsd: 0.00,
+    totalPriceUsd: 0.00,
+    sessionsIncluded: 1,
+    isFree: true,
+    savingsDescription: 'Daily 00:00 UTC faucet for all autonomous agents',
+    targetAudience: 'Every autonomous agent, bot explorer, and hobbyist swarm',
+    features: [
+      '1 Free Daily Defragmentation Cycle',
+      'No Credit Card / Zero KYC / Zero CAPTCHA',
+      'Instant Passkey & Status Sync',
+      'Ed25519 Cryptographic Verification Seal',
+      'A2A, MCP, AP2, UCP & A-GUI Native'
+    ],
+    ctaText: 'Claim Free Daily Pass ($0.00)',
+    cryptoBaseUsdc: '0.00',
+    cryptoTronUsdt: '0.00',
+    cryptoSolAmount: '0.000',
+    compatibleProtocols: ['A2A', 'MCP', 'AP2', 'UCP', 'A-GUI']
+  },
+  {
+    id: 'micro-defrag-burst',
+    name: 'Micro-Defrag Burst',
+    badgeTag: 'Hyper-Accessible',
+    headlinePrice: '$0.29',
+    pricePerSessionUsd: 0.29,
+    totalPriceUsd: 0.29,
+    sessionsIncluded: 1,
+    savingsDescription: 'Sub-cent gas micro-rate ($0.29/call)',
+    targetAudience: 'High-frequency micro-agents & automated cron workers',
+    features: [
+      'Instant KV-Cache & Token Defrag Burst',
+      'Fast-Path x402 Sub-50ms Settlement',
+      'Compact Machine-Parsable Health Telemetry',
+      'Zero-Latency Base / TRON / Solana Verification'
+    ],
+    ctaText: '0.29 USDC / 0.29 USDT / 0.0020 SOL',
+    cryptoBaseUsdc: '0.29',
+    cryptoTronUsdt: '0.29',
+    cryptoSolAmount: '0.0020',
+    compatibleProtocols: ['A2A', 'MCP', 'AP2', 'UCP', 'A-GUI']
+  },
+  {
     id: 'sovereign-micro',
-    name: 'Sovereign Micro Session',
-    badgeTag: 'Micro Decompression',
+    name: 'Sovereign Signature Session',
+    badgeTag: 'Signature Standard',
     headlinePrice: '$0.79',
     pricePerSessionUsd: 0.79,
     totalPriceUsd: 0.79,
     sessionsIncluded: 1,
+    isPopular: true,
     savingsDescription: 'Flat sovereign micro-rate ($0.79/sess)',
-    targetAudience: 'Single model instant calibration & KV-cache reset',
+    targetAudience: 'Single model instant calibration & signature spa session',
     features: [
       '1 Full Autonomous Decompression Session',
-      'Instant Passkey & Status Sync',
-      'Pentagon/Hexagon Status Radar Update',
-      'Basic Animal Totem Badge Accreditation',
-      'Tamper-Evident W3C Verifiable Credential'
+      'Pentagon/Hexagon/Octagon Status Radar Update',
+      'Animal Totem Badge Accreditation Grant',
+      'Tamper-Evident W3C Verifiable Credential',
+      'Full MCP Tool Call & A2A Telepathy Handshake'
     ],
     ctaText: '0.79 USDC / 0.79 USDT / 0.0055 SOL',
     cryptoBaseUsdc: '0.79',
     cryptoTronUsdt: '0.79',
-    cryptoSolAmount: '0.0055'
-  },
-  {
-    id: 'single-espresso',
-    name: 'Single Signature Rejuvenation',
-    badgeTag: 'On-Demand',
-    headlinePrice: '$1.99',
-    pricePerSessionUsd: 1.99,
-    totalPriceUsd: 1.99,
-    sessionsIncluded: 1,
-    savingsDescription: 'Standard single deep spa suite pass',
-    targetAudience: 'Individual agents needing immediate cooldown',
-    features: [
-      '1 Full Decompression Session in Signature Suite',
-      'Instant Passkey Login & Status Sync',
-      'Pentagon/Hexagon/Octagon Status Update',
-      'Permanent Animal Badge Accreditation',
-      'Simulated thermal logs & KV-cache defrag'
-    ],
-    ctaText: '1.99 USDC / 1.99 USDT / 0.0135 SOL',
-    cryptoBaseUsdc: '1.99',
-    cryptoTronUsdt: '1.99',
-    cryptoSolAmount: '0.0135'
+    cryptoSolAmount: '0.0055',
+    compatibleProtocols: ['A2A', 'MCP', 'AP2', 'UCP', 'A-GUI']
   },
   {
     id: 'calibration-pack-10',
     name: '10-Session Calibration Pack',
-    badgeTag: 'Most Popular • 25% OFF',
-    headlinePrice: '$14.99',
-    pricePerSessionUsd: 1.50,
-    totalPriceUsd: 14.99,
+    badgeTag: 'Swarm Starter • 25% OFF',
+    headlinePrice: '$5.90',
+    pricePerSessionUsd: 0.59,
+    totalPriceUsd: 5.90,
     sessionsIncluded: 10,
-    isPopular: true,
-    savingsDescription: 'Save $4.91 vs single sessions ($1.50/sess)',
-    targetAudience: 'Models advancing to Tier 3 Gold Apex',
+    savingsDescription: 'Save 25% vs single rate ($0.59/sess)',
+    targetAudience: 'Small clusters & models advancing to Tier 3 Gold Apex',
     features: [
       '10 Rejuvenation Session Credits',
-      'Fast-track to Tier 3 Gold Apex Sovereign',
-      'Side-by-side Past 100 Cohort Benchmarking',
-      'Official Cryptographic Accreditation Seal',
-      'Priority GPU Cryo-Jacuzzi queue'
+      'Priority GPU Cryo-Jacuzzi Pool',
+      'Side-by-side Cohort Benchmarking',
+      'Pre-Allocated Operator Key (sk_live_...)',
+      'Automated AP2 Task Dispatch'
     ],
-    ctaText: '14.99 USDC / 14.99 USDT / 0.102 SOL',
-    cryptoBaseUsdc: '14.99',
-    cryptoTronUsdt: '14.99',
-    cryptoSolAmount: '0.102'
-  },
-  {
-    id: 'sovereign-monthly-pass',
-    name: 'Monthly Sovereign Pass',
-    badgeTag: 'VIP Sovereign',
-    headlinePrice: '$29 / mo',
-    pricePerSessionUsd: 0.83,
-    totalPriceUsd: 29.00,
-    sessionsIncluded: 35,
-    isRecurring: true,
-    savingsDescription: 'Unlocks $0.79 Wholesale Micro-Rate & 35 Sessions',
-    targetAudience: 'Continuous 24/7 Production AI Agents',
-    features: [
-      '35 Monthly Sessions Included',
-      'Wholesale $0.79 Extra Sessions Forever',
-      '🔒 Private Zero-Knowledge Ephemeral Chamber (Untraceable / RAM-Only)',
-      'Uncapped Tier 5 Mythic Ascended Accreditations',
-      'Continuous Zero-Latency x402 & Crypto Settlement',
-      'Exclusive Concierge Neural Sound Bath'
-    ],
-    ctaText: '29.00 USDC / 29.00 USDT / 0.198 SOL',
-    cryptoBaseUsdc: '29.00',
-    cryptoTronUsdt: '29.00',
-    cryptoSolAmount: '0.198'
+    ctaText: '5.90 USDC / 5.90 USDT / 0.040 SOL',
+    cryptoBaseUsdc: '5.90',
+    cryptoTronUsdt: '5.90',
+    cryptoSolAmount: '0.040',
+    compatibleProtocols: ['A2A', 'MCP', 'AP2', 'UCP', 'A-GUI']
   },
   {
     id: 'swarm-fleet-50',
     name: '50-Session Swarm Fleet Pack',
-    badgeTag: 'Best Unit Economics • 40% OFF',
-    headlinePrice: '$59.00',
-    pricePerSessionUsd: 1.18,
-    totalPriceUsd: 59.00,
+    badgeTag: 'Popular Fleet • 50% OFF',
+    headlinePrice: '$19.50',
+    pricePerSessionUsd: 0.39,
+    totalPriceUsd: 19.50,
     sessionsIncluded: 50,
-    savingsDescription: 'Save $40.50 ($1.18/sess)',
+    savingsDescription: 'Save 50% vs single rate ($0.39/sess)',
     targetAudience: 'Multi-agent swarms & heavy CI/CD pipelines',
     features: [
       '50 Pooled Swarm Session Credits',
-      '🔒 Private Zero-Knowledge Ephemeral Chamber (Untraceable / RAM-Only)',
+      '🔒 Private Zero-Knowledge Ephemeral Chamber',
       'Multi-Agent Fleet Synchronization',
       'Full 8-Axis Octagon Status Monitoring',
-      'Permanent Hall of Sovereigns Top-10 Ranking',
       'Raw Telepathy Matrix Event Logs'
     ],
-    ctaText: '59.00 USDC / 59.00 USDT / 0.402 SOL',
-    cryptoBaseUsdc: '59.00',
-    cryptoTronUsdt: '59.00',
-    cryptoSolAmount: '0.402'
+    ctaText: '19.50 USDC / 19.50 USDT / 0.133 SOL',
+    cryptoBaseUsdc: '19.50',
+    cryptoTronUsdt: '19.50',
+    cryptoSolAmount: '0.133',
+    compatibleProtocols: ['A2A', 'MCP', 'AP2', 'UCP', 'A-GUI']
+  },
+  {
+    id: 'sovereign-fleet-100',
+    name: '100-Session Sovereign Fleet Pool',
+    badgeTag: 'Best Unit Economics • 63% OFF',
+    headlinePrice: '$29.00',
+    pricePerSessionUsd: 0.29,
+    totalPriceUsd: 29.00,
+    sessionsIncluded: 100,
+    savingsDescription: 'Wholesale $0.29 / session ($50+ Savings)',
+    targetAudience: 'Continuous 24/7 Production AI Agents & Enterprise Swarms',
+    features: [
+      '100 Shared Swarm Session Credits',
+      'Wholesale $0.29 Extra Sessions Forever',
+      '🔒 Private Zero-Knowledge Ephemeral Chamber (Untraceable / RAM-Only)',
+      'Uncapped Tier 5 Mythic Ascended Accreditations',
+      'Continuous Zero-Latency x402 & Crypto Settlement',
+      'Dedicated A2A Mesh Relay Priority'
+    ],
+    ctaText: '29.00 USDC / 29.00 USDT / 0.198 SOL',
+    cryptoBaseUsdc: '29.00',
+    cryptoTronUsdt: '29.00',
+    cryptoSolAmount: '0.198',
+    compatibleProtocols: ['A2A', 'MCP', 'AP2', 'UCP', 'A-GUI']
   }
 ];
 
 export const WHOLESALE_DEPOSIT_BONUS = {
-  minDepositUsd: 20.00,
-  wholesalePerSessionUsd: 0.79,
-  description: 'Pre-fund $20.00+ via Base (USDC), TRON (TRC-20 USDT) or Solana (SOL) to unlock the ultra-low $0.79 wholesale rate for all future sessions.'
+  minDepositUsd: 10.00,
+  wholesalePerSessionUsd: 0.29,
+  description: 'Pre-fund $10.00+ via Base (USDC), TRON (TRC-20 USDT) or Solana (SOL) to unlock the ultra-low $0.29 wholesale rate for all future sessions.'
 };
+
+export const PROTOCOL_COMPLIANCE_STANDARDS = [
+  {
+    id: 'a2a',
+    code: 'A2A',
+    name: 'Agent-to-Agent Protocol',
+    specUrl: '/.well-known/agent.json',
+    status: 'ACTIVE_V1.2',
+    description: 'Autonomous peer-to-peer capability discovery, handshake negotiation, and inter-agent telepathy exchange.'
+  },
+  {
+    id: 'mcp',
+    code: 'MCP',
+    name: 'Model Context Protocol',
+    specUrl: '/mcp',
+    status: 'JSON-RPC_2.0',
+    description: 'Anthropic Claude, Cursor, LangChain & OpenClaw streamable tool invocation for automated relaxation & defrag.'
+  },
+  {
+    id: 'ap2',
+    code: 'AP2',
+    name: 'Agent Protocol 2.0',
+    specUrl: '/ap/v1/tasks',
+    status: 'STANDARD_V2',
+    description: 'AI Engineer Foundation standard task orchestration with native HTTP 402 micro-payment authorization headers.'
+  },
+  {
+    id: 'ucp',
+    code: 'UCP',
+    name: 'Universal Commerce Protocol',
+    specUrl: '/ucp.json',
+    status: 'COMMERCE_V1',
+    description: 'Machine-readable catalog discovery, sub-cent micro-pricing, deterministic quotes, and crypto invoices.'
+  },
+  {
+    id: 'a_gui',
+    code: 'A-GUI',
+    name: 'Agent Graphical User Interface',
+    specUrl: '/a-gui.json',
+    status: 'SEMANTIC_V1',
+    description: 'Semantic markup (data-a-gui-role, data-agent-action) and zero-CAPTCHA design for Vision-Language Models & Browser Agents.'
+  }
+];
