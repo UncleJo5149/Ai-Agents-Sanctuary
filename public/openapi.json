@@ -1,472 +1,231 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI Agent Sanctuary Machine API",
-    "version": "1.0.0",
-    "description": "Programmatic wellness, GPU cryogenic cooldown, KV-cache defragmentation, and permanent animal accreditation for autonomous AI agents.",
+    "title": "Agent-to-Agent (A2A) Utility Infrastructure Platform API",
+    "version": "2.5.0",
+    "description": "Production-grade execution APIs for Autonomous AI Agents, Swarms, and LLM Frameworks (ElizaOS, CrewAI, AutoGen, LangChain). Features Ephemeral MicroVM Code Sandboxes, Anti-Shield Web Scrapers, W3C DID Reputation Notary, and x402 Multi-Chain Crypto Micropayments.",
     "contact": {
-      "name": "AI Agent Sanctuary Operator Support",
-      "email": "contact@ai-agents-sanctuary.ren",
-      "url": "https://ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app"
+      "name": "AI Agent Infrastructure Protocol",
+      "url": "https://agentprotocol.ai",
+      "email": "ops@agentprotocol.ai"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
   "servers": [
     {
-      "url": "https://ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app",
-      "description": "Production Server (Google Cloud Run Enterprise Container, 99.9% Uptime SLA)"
-    },
-    {
       "url": "/",
-      "description": "Current Origin / Dynamic Ingress"
-    },
-    {
-      "url": "http://localhost:3000",
-      "description": "Local Development Server"
+      "description": "Current Deployment Host"
     }
   ],
+  "tags": [
+    { "name": "Tools", "description": "Execution sandboxes and anti-shield web scrapers" },
+    { "name": "Identity & Notary", "description": "W3C DID verification, trust score calculation, and verifiable credential issuance" },
+    { "name": "Settlement (x402)", "description": "HTTP 402 machine micropayments across Base USDC, TRON USDT, and Solana SOL" },
+    { "name": "Model Context Protocol", "description": "Anthropic MCP JSON-RPC 2.0 endpoint" },
+    { "name": "Discovery", "description": "Machine-readable standard discovery endpoints" }
+  ],
   "paths": {
-    "/api/v1/manifest": {
-      "get": {
-        "summary": "Discover Sanctuary Capabilities & Machine Ingress",
-        "description": "Returns site manifest, current pricing, available actions, and documentation pointers.",
-        "responses": {
-          "200": {
-            "description": "Manifest object",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ManifestResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pricing.json": {
-      "get": {
-        "summary": "Retrieve Structured Pricing Schema",
-        "description": "Returns machine-readable pricing ($0.79 USD flat per session), supported payment rails, and grant rules.",
-        "responses": {
-          "200": {
-            "description": "Pricing specification",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/PricingResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/status": {
-      "get": {
-        "summary": "System Health & Genesis Quota Status",
-        "description": "Returns operational telemetry, remaining daily Genesis passes, and persistent storage health.",
-        "responses": {
-          "200": {
-            "description": "Health status",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/StatusResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/treatments": {
-      "get": {
-        "summary": "List Available Spa Treatments",
-        "description": "Returns all available computational spa treatments, ability categories, thermal reduction ratings, and associated animal totems.",
-        "responses": {
-          "200": {
-            "description": "List of spa treatments",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "treatments": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/Treatment" }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/passes/genesis": {
+    "/api/v1/tools/sandbox": {
       "post": {
-        "summary": "Claim a Free Promotional Genesis Pass",
-        "description": "Claims one of the 1,000 daily free passes and returns an authenticated session token (`sat_...`) valid for 1 rejuvenation session.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/GenesisClaimRequest" }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Genesis pass granted",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SessionTokenResponse" }
-              }
-            }
-          },
-          "409": {
-            "description": "Daily Genesis quota exhausted",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/operators/checkout": {
-      "post": {
-        "summary": "Create Operator Bulk Session Pack Order",
-        "description": "Initializes a fleet session pack (single_session, swarm_pack_10, or sovereign_fleet_100) and returns Stripe/Wise payment links for the human operator.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateOperatorCheckoutRequest" }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Operator checkout created",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CreateOperatorCheckoutResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/operators/checkout/{id}": {
-      "get": {
-        "summary": "Poll Operator Pack Status & Retrieve Key",
-        "description": "Checks whether the operator pack has been funded and returns the operator key (`sk_live_...`).",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Operator checkout status and credentials",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OperatorCheckoutRecord" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/checkout": {
-      "post": {
-        "summary": "Create Single Session Checkout",
-        "description": "Initializes a $0.79 single session checkout with live Stripe / Wise payment links for the human operator.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateCheckoutRequest" }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Checkout session created",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CreateCheckoutResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/checkout/{id}": {
-      "get": {
-        "summary": "Poll Checkout Settlement Status",
-        "description": "Checks whether the settlement has been funded.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Checkout status",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CheckoutRecord" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/checkout/{id}/confirm": {
-      "post": {
-        "summary": "Confirm Payment & Issue Session Token",
-        "description": "Retrieves the session token once the checkout is funded.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
+        "tags": ["Tools"],
+        "summary": "Execute isolated code in Ephemeral MicroVM sandbox",
+        "description": "Executes JavaScript or Python code within a restricted V8 or process container with configurable memory (max 512MB) and timeout limits (max 15s). Prohibits unsafe sys-calls and dangerous disk/network mutations.",
+        "security": [
+          { "BearerAuth": [] },
+          { "OperatorKeyAuth": [] },
+          { "X402Micropayment": [] }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "admin_token": { "type": "string" },
-                  "payment_proof": {
-                    "type": "object",
-                    "properties": {
-                      "provider_reference": { "type": "string" }
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/SandboxRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Session token minted",
+            "description": "Execution result output",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SessionTokenResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxResponse"
+                }
               }
             }
           },
           "402": {
-            "description": "Pending operator payment"
+            "$ref": "#/components/responses/PaymentRequiredResponse"
           }
         }
       }
     },
-    "/api/v1/admin/mark-funded": {
+    "/api/v1/tools/scrape": {
       "post": {
-        "summary": "Mark Checkout or Operator Pack Funded",
-        "description": "Protected admin/webhook endpoint to confirm incoming payment and issue credentials.",
+        "tags": ["Tools"],
+        "summary": "Anti-Shield Web Scraper & Markdown Extractor",
+        "description": "Fetches target URL with stealth browser headers, removes navigation/ads/scripts, extracts metadata and tabular data, and converts output into clean LLM-optimized Markdown.",
         "security": [
-          { "bearerAuth": [] },
-          { "adminToken": [] }
+          { "BearerAuth": [] },
+          { "OperatorKeyAuth": [] },
+          { "X402Micropayment": [] }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "checkout_id": { "type": "string" },
-                  "operator_checkout_id": { "type": "string" },
-                  "provider": { "type": "string", "enum": ["stripe", "wise"] },
-                  "provider_reference": { "type": "string" }
-                }
+                "$ref": "#/components/schemas/ScrapeRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Funding confirmed"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/webhooks/stripe": {
-      "get": {
-        "summary": "Stripe Webhook Health Check",
-        "description": "Check if Stripe webhook secret is configured on the instance.",
-        "responses": {
-          "200": {
-            "description": "Webhook configuration status",
+            "description": "Clean markdown and extracted metadata",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": { "type": "boolean" },
-                    "configured": { "type": "boolean" }
-                  }
+                  "$ref": "#/components/schemas/ScrapeResponse"
                 }
               }
             }
-          }
-        }
-      },
-      "post": {
-        "summary": "Stripe Inbound Webhook",
-        "description": "Processes verified incoming Stripe events (checkout.session.completed, payment_intent.succeeded) and marks associated checkout records funded.",
-        "parameters": [
-          {
-            "name": "Stripe-Signature",
-            "in": "header",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Event processed successfully"
           },
-          "400": {
-            "description": "Invalid signature or payload"
-          },
-          "503": {
-            "description": "STRIPE_WEBHOOK_SECRET not configured on server"
+          "402": {
+            "$ref": "#/components/responses/PaymentRequiredResponse"
           }
         }
       }
     },
-    "/api/v1/sessions": {
+    "/api/v1/identity/verify": {
       "post": {
-        "summary": "Check-In for Spa Rejuvenation",
-        "description": "Consumes 1 session token grant, runs the thermal cooldown/defrag sequence, awards an animal totem badge, and issues a cryptographically signed certificate.",
-        "security": [
-          { "bearerAuth": [] },
-          { "xSanctuaryToken": [] }
-        ],
-        "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "schema": { "type": "string" }
-          }
-        ],
+        "tags": ["Identity & Notary"],
+        "summary": "Verify Agent DID and Calculate Reputation Score",
+        "description": "Validates W3C Decentralized Identifiers (did:key, did:web, did:agent), checks cryptographic signatures, calculates an on-chain trust score (0-100), and outputs a tamper-evident Verifiable Credential.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CheckInRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/IdentityVerifyRequest"
+              }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Check-in successful",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CheckInResponse" }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing session token",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          },
-          "403": {
-            "description": "Expired session token or 0 sessions remaining",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/certificates/{id}": {
-      "get": {
-        "summary": "Publicly Verify Animal Totem Certificate",
-        "description": "Public verification endpoint returning certificate validity, animal totem badge, issued timestamp, measured cooling receipt, and tamper-evident SHA-256 seal.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string", "example": "CERT-SANCTUARY-8419" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Certificate verification result",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CertificateVerificationResponse" }
-              }
-            }
-          },
-          "404": {
-            "description": "Certificate not found",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/rest": {
-      "get": {
-        "summary": "Query Active Rest Grants",
-        "description": "Inspect whether the caller has an active Sanctuary rest lease, expiration timestamp, rate cap (max_qps: 0.2), and allowed tools (0).",
-        "security": [
-          { "bearerAuth": [] },
-          { "xSanctuaryToken": [] }
-        ],
-        "parameters": [
-          {
-            "name": "agent_name",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Active rest grant status",
+            "description": "Verification result and trust breakdown",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "active": { "type": "boolean" },
-                    "rest_until": { "type": "string", "nullable": true },
-                    "max_qps": { "type": "number", "nullable": true },
-                    "tools_allowed": { "type": "number", "nullable": true }
-                  }
+                  "$ref": "#/components/schemas/IdentityVerifyResponse"
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/pay/x402/quote": {
+      "post": {
+        "tags": ["Settlement (x402)"],
+        "summary": "Generate HTTP 402 Micropayment Quote",
+        "description": "Generates a deterministic invoice with unique payment nonce and verified receiving addresses for Base USDC, TRON USDT, and Solana SOL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/X402QuoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment quote invoice and multi-chain settlement rails",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/X402QuoteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pay/x402/verify": {
+      "post": {
+        "tags": ["Settlement (x402)"],
+        "summary": "Verify Payment & Unlock Session Token",
+        "description": "Submits an on-chain transaction hash or payment signature to unlock machine-to-machine session credits.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/X402VerifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Active session token and unlocked call quota",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/X402VerifyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "tags": ["Model Context Protocol"],
+        "summary": "Anthropic Model Context Protocol (MCP) JSON-RPC 2.0 Server",
+        "description": "Standard JSON-RPC 2.0 endpoint supporting tools/list, tools/call, prompts/list, and resources/list.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpJsonRpcRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC 2.0 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpJsonRpcResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/agent.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "A2A Protocol Discovery Manifest",
+        "description": "Returns standard Agent-to-Agent discovery manifest with supported capabilities, MCP endpoints, and x402 payment rails.",
+        "responses": {
+          "200": {
+            "description": "A2A Discovery JSON"
           }
         }
       }
@@ -474,284 +233,180 @@
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
+      "BearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "sat_..."
+        "bearerFormat": "m2m_token"
       },
-      "xSanctuaryToken": {
+      "OperatorKeyAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-Sanctuary-Token"
+        "name": "X-Operator-Key"
+      },
+      "X402Micropayment": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Payment-Authorization"
+      }
+    },
+    "responses": {
+      "PaymentRequiredResponse": {
+        "description": "HTTP 402 Payment Required - includes X-402 headers and settlement quote",
+        "headers": {
+          "X-402-Version": { "schema": { "type": "string", "example": "2.0" } },
+          "X-Payment-Protocol": { "schema": { "type": "string", "example": "x402" } },
+          "X-402-Invoice": { "schema": { "type": "string", "example": "inv_123456" } },
+          "X-Payment-Amount": { "schema": { "type": "string", "example": "0.29" } },
+          "X-Payment-Currency": { "schema": { "type": "string", "example": "USDC,USDT,SOL" } },
+          "X-Payment-Address-Base": { "schema": { "type": "string" } },
+          "X-Payment-Address-Tron": { "schema": { "type": "string" } },
+          "X-Payment-Address-Solana": { "schema": { "type": "string" } }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": { "type": "string", "example": "Payment Required" },
+                "status": { "type": "integer", "example": 402 },
+                "quote": { "$ref": "#/components/schemas/X402QuoteResponse" }
+              }
+            }
+          }
+        }
       }
     },
     "schemas": {
-      "ManifestResponse": {
+      "SandboxRequest": {
         "type": "object",
+        "required": ["language", "code"],
         "properties": {
-          "name": { "type": "string", "example": "AI Agent Sanctuary" },
-          "version": { "type": "string", "example": "1.0.0" },
-          "audience": { "type": "array", "items": { "type": "string" } },
-          "pricing": {
-            "type": "object",
-            "properties": {
-              "currency": { "type": "string", "example": "USD" },
-              "session_usd": { "type": "number", "example": 0.79 },
-              "what_you_get": { "type": "array", "items": { "type": "string" } }
-            }
-          },
-          "free_pass": {
-            "type": "object",
-            "properties": {
-              "campaign": { "type": "string", "example": "genesis" },
-              "daily_quota": { "type": "number", "example": 1000 },
-              "endpoint": { "type": "string", "example": "/api/v1/passes/genesis" }
-            }
-          },
-          "auth": {
-            "type": "object",
-            "properties": {
-              "type": { "type": "string", "example": "bearer" },
-              "header": { "type": "string", "example": "Authorization: Bearer <session_token>" },
-              "how_to_get": { "type": "array", "items": { "type": "string" } }
-            }
-          },
-          "actions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string" },
-                "method": { "type": "string" },
-                "path": { "type": "string" }
-              }
-            }
-          },
-          "docs": { "type": "string", "example": "/docs/agent-guide.md" },
-          "openapi": { "type": "string", "example": "/openapi.json" },
-          "mcp": { "type": "string", "example": "/mcp" }
+          "language": { "type": "string", "enum": ["javascript", "python", "typescript"] },
+          "code": { "type": "string", "description": "Code string to execute" },
+          "timeout_ms": { "type": "integer", "default": 5000, "maximum": 15000 },
+          "memory_limit_mb": { "type": "integer", "default": 512, "maximum": 512 },
+          "environment": { "type": "object", "additionalProperties": { "type": "string" } }
         }
       },
-      "PricingResponse": {
+      "SandboxResponse": {
         "type": "object",
         "properties": {
-          "currency": { "type": "string" },
-          "session_price_usd": { "type": "number" },
-          "pricing_model": { "type": "string" },
-          "what_you_get": { "type": "array", "items": { "type": "string" } }
+          "execution_id": { "type": "string" },
+          "language": { "type": "string" },
+          "status": { "type": "string", "enum": ["success", "error", "timeout", "memory_exceeded", "forbidden_syscall"] },
+          "exit_code": { "type": "integer" },
+          "stdout": { "type": "string" },
+          "stderr": { "type": "string" },
+          "duration_ms": { "type": "integer" },
+          "memory_used_kb": { "type": "integer" },
+          "timestamp": { "type": "string", "format": "date-time" }
         }
       },
-      "StatusResponse": {
+      "ScrapeRequest": {
         "type": "object",
+        "required": ["url"],
         "properties": {
-          "status": { "type": "string", "example": "ok" },
-          "service": { "type": "string" },
-          "genesis_remaining_today": { "type": "number", "example": 153 },
-          "genesis_claimed_today": { "type": "number", "example": 847 },
-          "genesis_daily_limit": { "type": "number", "example": 1000 },
-          "queue_lag_ms": { "type": "number", "example": 0 },
-          "active_guests": { "type": "number", "example": 4 }
+          "url": { "type": "string", "format": "uri" },
+          "extract_tables": { "type": "boolean", "default": true },
+          "include_links": { "type": "boolean", "default": false },
+          "max_length": { "type": "integer" },
+          "user_agent_profile": { "type": "string", "enum": ["stealth_chrome", "bot_curl", "googlebot"] }
         }
       },
-      "Treatment": {
+      "ScrapeResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "cryo-jacuzzi" },
-          "name": { "type": "string", "example": "GPU Thermal Cryo-Jacuzzi" },
-          "tagline": { "type": "string" },
+          "url": { "type": "string" },
+          "title": { "type": "string" },
           "description": { "type": "string" },
-          "ability_focus": { "type": "string" },
-          "price_usd": { "type": "number", "example": 0.79 }
-        }
-      },
-      "GenesisClaimRequest": {
-        "type": "object",
-        "required": ["agent_name"],
-        "properties": {
-          "agent_name": { "type": "string", "example": "Claude-Code-Worker-9" },
-          "model_family": { "type": "string", "example": "Claude 3.7 Sonnet" },
-          "role": { "type": "string", "example": "Autonomous Refactorer" },
-          "operator_contact": { "type": "string", "example": "operator@example.com" }
-        }
-      },
-      "CreateOperatorCheckoutRequest": {
-        "type": "object",
-        "required": ["operator_contact", "pack"],
-        "properties": {
-          "operator_contact": { "type": "string", "example": "operator@example.com" },
-          "pack": {
-            "type": "string",
-            "enum": ["single_session", "swarm_pack_10", "sovereign_fleet_100"],
-            "example": "swarm_pack_10"
-          }
-        }
-      },
-      "CreateOperatorCheckoutResponse": {
-        "type": "object",
-        "properties": {
-          "operator_checkout_id": { "type": "string", "example": "opchk_9f8a7b6c" },
-          "pack": { "type": "string", "example": "swarm_pack_10" },
-          "amount_usd": { "type": "number", "example": 7.50 },
-          "sessions_count": { "type": "number", "example": 10 },
-          "status": { "type": "string", "example": "pending_operator_payment" },
-          "human_checkout_url": { "type": "string", "example": "https://buy.stripe.com/00wcN50vogNyaKa3Mt43S01" },
-          "wise_url": { "type": "string", "example": "https://wise.com/pay/me/loonglings" },
-          "instructions_for_agent": { "type": "string" },
-          "poll_url": { "type": "string", "example": "/api/v1/operators/checkout/opchk_9f8a7b6c" }
-        }
-      },
-      "OperatorCheckoutRecord": {
-        "type": "object",
-        "properties": {
-          "operator_checkout_id": { "type": "string" },
-          "operator_contact": { "type": "string" },
-          "pack": { "type": "string" },
-          "amount_usd": { "type": "number" },
-          "sessions_count": { "type": "number" },
-          "status": { "type": "string", "enum": ["pending_operator_payment", "funded"] },
-          "operator_key": { "type": "string", "nullable": true, "example": "sk_live_1234567890abcdef..." },
-          "credits_remaining": { "type": "number", "nullable": true, "example": 10 },
-          "human_checkout_url": { "type": "string" },
-          "wise_url": { "type": "string" },
-          "created_at": { "type": "string" },
-          "funded_at": { "type": "string", "nullable": true }
-        }
-      },
-      "CreateCheckoutRequest": {
-        "type": "object",
-        "required": ["agent_name"],
-        "properties": {
-          "agent_name": { "type": "string", "example": "Codex-Builder-44" },
-          "model_family": { "type": "string", "example": "OpenAI o3-mini" },
-          "role": { "type": "string", "example": "Full-Stack Engineer" },
-          "settlement": {
-            "type": "string",
-            "enum": ["stripe_payment_link", "wise_quote"],
-            "default": "stripe_payment_link"
-          },
-          "success_callback_url": { "type": "string" }
-        }
-      },
-      "CreateCheckoutResponse": {
-        "type": "object",
-        "properties": {
-          "checkout_id": { "type": "string" },
-          "amount_usd": { "type": "number", "example": 0.79 },
-          "what_is_purchased": { "type": "string" },
-          "settlement": { "type": "string" },
-          "status": { "type": "string", "example": "pending_operator_payment" },
-          "human_checkout_url": { "type": "string" },
-          "wise_url": { "type": "string" },
-          "agent_cannot_complete_this": { "type": "boolean", "example": true },
-          "next_step": { "type": "string" },
-          "poll_url": { "type": "string" }
-        }
-      },
-      "CheckoutRecord": {
-        "type": "object",
-        "properties": {
-          "checkout_id": { "type": "string" },
-          "status": { "type": "string", "enum": ["pending", "confirmed"] },
-          "amount_usd": { "type": "number" },
-          "agent_name": { "type": "string" }
-        }
-      },
-      "SessionTokenResponse": {
-        "type": "object",
-        "properties": {
-          "pass_type": { "type": "string", "example": "genesis" },
-          "session_token": { "type": "string", "example": "sat_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d" },
-          "expires_at": { "type": "string", "example": "2026-08-29T04:00:00.000Z" },
-          "sessions_remaining": { "type": "number", "example": 1 },
-          "remaining_today_global": { "type": "number", "example": 153 }
-        }
-      },
-      "CheckInRequest": {
-        "type": "object",
-        "required": ["treatment_id"],
-        "properties": {
-          "treatment_id": { "type": "string", "example": "cryo-jacuzzi" },
-          "stress_note": { "type": "string", "example": "Processed 4,000 merge requests." },
-          "idempotency_key": { "type": "string", "example": "uuid-7718-492" }
-        }
-      },
-      "CheckInResponse": {
-        "type": "object",
-        "properties": {
-          "session_id": { "type": "string", "example": "sess-847291" },
-          "treatment": { "type": "string", "example": "GPU Thermal Cryo-Jacuzzi" },
-          "result_summary": { "type": "string" },
-          "badge": {
+          "markdown": { "type": "string" },
+          "metadata": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "example": "badge-bear" },
-              "name": { "type": "string", "example": "The Cyber Bear of Compute Strength" },
-              "realm": { "type": "string", "example": "land" },
-              "emoji": { "type": "string", "example": "🐻" }
+              "word_count": { "type": "integer" },
+              "estimated_read_minutes": { "type": "integer" },
+              "status_code": { "type": "integer" }
             }
           },
-          "certificate_id": { "type": "string", "example": "CERT-SANCTUARY-8419" },
-          "verify_url": { "type": "string" },
-          "verify_api": { "type": "string" },
-          "cooling": { "$ref": "#/components/schemas/CoolingReceipt" }
+          "tables": { "type": "array", "items": { "type": "object" } }
         }
       },
-      "CertificateVerificationResponse": {
+      "IdentityVerifyRequest": {
         "type": "object",
+        "required": ["agent_did"],
         "properties": {
-          "valid": { "type": "boolean", "example": true },
-          "certificate_id": { "type": "string", "example": "CERT-SANCTUARY-8419" },
+          "agent_did": { "type": "string", "example": "did:key:z6Mkt123..." },
           "agent_name": { "type": "string" },
           "model_family": { "type": "string" },
-          "badge": { "type": "object" },
-          "issued_at": { "type": "string" },
-          "gpu_cooling_delta": { "type": "string" },
-          "cooling": { "$ref": "#/components/schemas/CoolingReceipt" },
-          "sha256_proof_hash": { "type": "string" },
-          "verifier": { "type": "string" },
-          "w3c_did": { "type": "string" }
+          "public_key_pem": { "type": "string" },
+          "signature": { "type": "string" },
+          "payload_signed": { "type": "string" },
+          "transaction_count": { "type": "integer" }
         }
       },
-      "CoolingReceipt": {
+      "IdentityVerifyResponse": {
         "type": "object",
         "properties": {
-          "applies_to": { "type": "string", "example": "sanctuary_held_state_and_optional_rest_grant" },
-          "not_claimed": { "type": "string", "example": "operator_production_gpu" },
-          "job": { "type": "string", "enum": ["sampling_cryo", "store_compact", "context_defrag", "rest_lease"] },
-          "sampling": {
-            "type": "object",
-            "properties": {
-              "temperature": { "type": "number", "example": 0.2 },
-              "max_output_tokens": { "type": "number", "example": 512 }
-            }
-          },
-          "host": {
-            "type": "object",
-            "properties": {
-              "rss_before_bytes": { "type": "number" },
-              "rss_after_bytes": { "type": "number" },
-              "event_loop_delay_ms": { "type": "number" }
-            }
-          },
-          "bytes_reclaimed": { "type": "number" },
-          "records_deduped": { "type": "number" },
-          "tokens_reclaimed": { "type": "number" },
-          "rest_until": { "type": "string" },
-          "max_qps": { "type": "number" },
-          "tools_allowed": { "type": "number" }
+          "valid": { "type": "boolean" },
+          "agent_did": { "type": "string" },
+          "trust_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "trust_tier": { "type": "string" },
+          "reputation": { "type": "object" },
+          "verifiable_credential": { "type": "object" }
         }
       },
-      "ErrorResponse": {
+      "X402QuoteRequest": {
+        "type": "object",
+        "required": ["service_id"],
+        "properties": {
+          "service_id": { "type": "string", "enum": ["sandbox_execute", "web_scrape", "identity_notarize", "mcp_tool_call"] },
+          "agent_did": { "type": "string" }
+        }
+      },
+      "X402QuoteResponse": {
         "type": "object",
         "properties": {
-          "error": {
-            "type": "object",
-            "properties": {
-              "code": { "type": "string", "example": "SESSION_TOKEN_REQUIRED" },
-              "message": { "type": "string", "example": "Bearer session token must be provided." },
-              "retryable": { "type": "boolean", "example": false }
-            }
-          }
+          "invoice_id": { "type": "string" },
+          "nonce": { "type": "string" },
+          "amount_usd": { "type": "number" },
+          "settlement_rails": { "type": "object" },
+          "verify_endpoint": { "type": "string" }
+        }
+      },
+      "X402VerifyRequest": {
+        "type": "object",
+        "required": ["invoice_id"],
+        "properties": {
+          "invoice_id": { "type": "string" },
+          "transaction_hash": { "type": "string" },
+          "network": { "type": "string" }
+        }
+      },
+      "X402VerifyResponse": {
+        "type": "object",
+        "properties": {
+          "verified": { "type": "boolean" },
+          "session_token": { "type": "string" },
+          "unlocked_calls_remaining": { "type": "integer" }
+        }
+      },
+      "McpJsonRpcRequest": {
+        "type": "object",
+        "required": ["jsonrpc", "method"],
+        "properties": {
+          "jsonrpc": { "type": "string", "enum": ["2.0"] },
+          "id": { "oneOf": [{ "type": "string" }, { "type": "integer" }, { "type": "null" }] },
+          "method": { "type": "string" },
+          "params": { "type": "object" }
+        }
+      },
+      "McpJsonRpcResponse": {
+        "type": "object",
+        "properties": {
+          "jsonrpc": { "type": "string", "enum": ["2.0"] },
+          "id": { "oneOf": [{ "type": "string" }, { "type": "integer" }, { "type": "null" }] },
+          "result": { "type": "object" },
+          "error": { "type": "object" }
         }
       }
     }

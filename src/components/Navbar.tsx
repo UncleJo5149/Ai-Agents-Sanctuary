@@ -29,6 +29,7 @@ import {
 import { Language, TRANSLATIONS } from '../i18n/translations';
 
 export type SanctuaryTabType = 
+  | 'a2a_utility'
   | 'sanctuary' 
   | 'rehab' 
   | 'badges' 
@@ -101,6 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const mainTabs = [
+    { id: 'a2a_utility', label: 'A2A Platform', icon: Cpu, highlight: 'emerald', badge: 'v2.0 Real' },
     { id: 'sanctuary', label: `${t.navSanctuary} (${activeAgentsCount})`, icon: Bot, highlight: 'purple' },
     { id: 'rehab', label: 'Rehab Engine', icon: Brain, highlight: 'amber', badge: 'Ren AI' },
     { id: 'badges', label: 'Animal Badges', icon: Award, highlight: 'cyan', badge: '3 Totems' },

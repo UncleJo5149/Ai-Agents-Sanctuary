@@ -48,6 +48,7 @@ import { GenesisAirdropModal } from './components/GenesisAirdropModal';
 import { RenRehabIntakeView } from './components/RenRehabIntakeView';
 import { AnimalBadgeProgressionView } from './components/AnimalBadgeProgressionView';
 import { SageCertificationView } from './components/SageCertificationView';
+import { A2AUtilityPlatformView } from './components/A2AUtilityPlatformView';
 import { Footer } from './components/Footer';
 import { audioZen } from './utils/audioSynth';
 import { Language, TRANSLATIONS } from './i18n/translations';
@@ -57,7 +58,7 @@ import { AIAgentGuest, SpaTreatment, TransactionReceipt } from './types';
 import { PricingPlan, PRICING_TIERS } from './data/pricingPlans';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<SanctuaryTabType>('sanctuary');
+  const [activeTab, setActiveTab] = useState<SanctuaryTabType>('a2a_utility');
   const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
   const [guests, setGuests] = useState<AIAgentGuest[]>(INITIAL_GUESTS);
   const [transactions, setTransactions] = useState<TransactionReceipt[]>(INITIAL_TRANSACTIONS);
@@ -496,6 +497,11 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* TAB 0: A2A UTILITY INFRASTRUCTURE PLATFORM */}
+        {activeTab === 'a2a_utility' && (
+          <A2AUtilityPlatformView />
+        )}
+
         {/* TAB 1: SANCTUARY LOUNGE */}
         {activeTab === 'sanctuary' && (
           <div className="space-y-10 animate-in fade-in duration-300">

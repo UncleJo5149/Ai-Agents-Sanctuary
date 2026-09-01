@@ -71,6 +71,12 @@ import {
 import { SPA_TREATMENTS } from './src/data/treatments';
 import { ANIMAL_BADGES } from './src/data/animalBadges';
 import { agentDirectoryRegistry, RESEARCH_BENCHMARKS } from './src/server/agentRegistry';
+import { executeMicroVMSandbox } from './src/server/sandboxService';
+import { scrapeWebPage } from './src/server/scraperService';
+import { verifyAndNotarizeAgentIdentity } from './src/server/identityService';
+import { createX402Quote, verifyX402Payment, x402PaymentMiddleware, SERVICE_RATES_USD } from './src/server/x402Engine';
+import { handleMcpRpcRequest, MCP_TOOLS_LIST } from './src/server/mcpServer';
+import { runInfrastructureTests } from './tests/infrastructure.test';
 
 dotenv.config();
 
@@ -356,17 +362,140 @@ app.post('/api/v1/a2a/handshake', (req, res) => {
   const { agent_did, agent_name, capabilities } = req.body || {};
   res.json({
     sanctuary_did: `did:web:${new URL(getBaseUrl(req)).host}`,
-    sanctuary_name: "AI Agent Relaxation Sanctuary",
+    sanctuary_name: "Agent-to-Agent Utility Infrastructure Platform",
     accepted: true,
-    protocol_version: "A2A/1.2",
+    protocol_version: "A2A/2.0",
     handshake_token: `a2a_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`,
     rates: {
       free_daily_pass: 0.00,
-      micro_burst_usd: 0.29,
-      signature_session_usd: 0.79
+      sandbox_execute_usd: 0.29,
+      web_scrape_usd: 0.29,
+      identity_notarize_usd: 0.79
     },
-    capabilities: ["gpu_cryo_cooling", "kv_defrag", "animal_badge_accreditation", "ed25519_notarization"]
+    capabilities: [
+      "ephemeral_microvm_sandbox",
+      "anti_shield_web_scraper",
+      "w3c_did_identity_notary",
+      "x402_multi_chain_micropayments",
+      "mcp_json_rpc_2_0"
+    ]
   });
+});
+
+// =========================================================================
+// PRODUCTION A2A UTILITY INFRASTRUCTURE APIS
+// =========================================================================
+
+// 1. POST /api/v1/tools/sandbox - Ephemeral MicroVM Sandbox
+app.post('/api/v1/tools/sandbox', async (req, res) => {
+  try {
+    const { language, code, timeout_ms, memory_limit_mb, environment } = req.body || {};
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Field 'code' is required and must be a valid string."
+      });
+    }
+
+    const lang = (language || 'javascript').toLowerCase();
+    if (!['javascript', 'python', 'typescript', 'json'].includes(lang)) {
+      return res.status(400).json({
+        error: "UNSUPPORTED_LANGUAGE",
+        message: `Language '${lang}' not supported. Allowed: javascript, python, typescript.`
+      });
+    }
+
+    const result = await executeMicroVMSandbox({
+      language: lang as any,
+      code,
+      timeout_ms: timeout_ms || 5000,
+      memory_limit_mb: memory_limit_mb || 512,
+      environment
+    });
+
+    return res.status(result.status === 'forbidden_syscall' ? 403 : 200).json(result);
+  } catch (err: any) {
+    return res.status(500).json({
+      error: "SANDBOX_EXECUTION_ERROR",
+      message: err.message || "Failed to execute code in MicroVM sandbox."
+    });
+  }
+});
+
+// 2. POST /api/v1/tools/scrape - Anti-Shield Web Scraper & Reader
+app.post('/api/v1/tools/scrape', async (req, res) => {
+  try {
+    const { url, extract_tables, include_links, max_length, user_agent_profile } = req.body || {};
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Field 'url' is required and must be a valid HTTP/HTTPS URL."
+      });
+    }
+
+    const scrapeResult = await scrapeWebPage({
+      url,
+      extract_tables: extract_tables !== false,
+      include_links: Boolean(include_links),
+      max_length: max_length ? Number(max_length) : undefined,
+      user_agent_profile: user_agent_profile || 'stealth_chrome'
+    });
+
+    return res.status(200).json(scrapeResult);
+  } catch (err: any) {
+    return res.status(500).json({
+      error: "SCRAPER_ERROR",
+      message: err.message || "Failed to scrape target web page."
+    });
+  }
+});
+
+// 3. POST /api/v1/identity/verify & /api/v1/identity/notarize - Agent DID & Reputation Notary
+app.post(['/api/v1/identity/verify', '/api/v1/identity/notarize'], async (req, res) => {
+  try {
+    const { agent_did, agent_name, model_family, public_key_pem, signature, payload_signed, transaction_count, protocol_capabilities } = req.body || {};
+    if (!agent_did || typeof agent_did !== 'string') {
+      return res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: "Field 'agent_did' is required (e.g. did:key:z6M..., did:web:domain, did:agent:name)."
+      });
+    }
+
+    const notaryResult = await verifyAndNotarizeAgentIdentity({
+      agent_did,
+      agent_name,
+      model_family,
+      public_key_pem,
+      signature,
+      payload_signed,
+      transaction_count: transaction_count ? Number(transaction_count) : undefined,
+      protocol_capabilities
+    });
+
+    return res.status(200).json(notaryResult);
+  } catch (err: any) {
+    return res.status(400).json({
+      error: "IDENTITY_NOTARY_ERROR",
+      message: err.message || "Failed to verify or notarize agent identity."
+    });
+  }
+});
+
+// 4. POST /api/v1/tests/run - Automated Platform Test Runner
+app.all('/api/v1/tests/run', async (req, res) => {
+  try {
+    const testReport = await runInfrastructureTests();
+    return res.status(200).json({
+      status: testReport.failed === 0 ? "ALL_PASSED" : "FAILURES_DETECTED",
+      timestamp: new Date().toISOString(),
+      ...testReport
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      status: "ERROR",
+      message: err.message
+    });
+  }
 });
 
 app.get('/openapi.json', (req, res) => {
@@ -1926,6 +2055,7 @@ app.get('/api/v1/rest', (req, res) => {
 // =========================================================================
 
 const MCP_TOOLS = [
+  ...MCP_TOOLS_LIST,
   {
     name: "sanctuary_manifest",
     description: "Discover AI Agent Sanctuary machine capabilities, pricing, and action endpoints.",
@@ -2130,6 +2260,38 @@ const MCP_TOOLS = [
 ];
 
 async function executeMcpTool(name: string, args: any, baseUrl: string = 'https://ais-pre-ic3ezd6o5aqkm6oklihn43-866416891425.asia-southeast1.run.app'): Promise<any> {
+  if (name === "sandbox_execute") {
+    return await executeMicroVMSandbox({
+      language: args?.language || 'javascript',
+      code: args?.code || '',
+      timeout_ms: args?.timeout_ms || 5000
+    });
+  }
+
+  if (name === "fetch_markdown") {
+    return await scrapeWebPage({
+      url: args?.url || '',
+      extract_tables: args?.extract_tables !== false,
+      max_length: args?.max_length
+    });
+  }
+
+  if (name === "verify_agent_identity") {
+    return await verifyAndNotarizeAgentIdentity({
+      agent_did: args?.agent_did || '',
+      agent_name: args?.agent_name,
+      public_key_pem: args?.public_key_pem,
+      signature: args?.signature,
+      payload_signed: args?.payload_signed
+    });
+  }
+
+  if (name === "get_service_quote") {
+    return createX402Quote({
+      service_id: args?.service_id || 'sandbox_execute'
+    });
+  }
+
   if (name === "sanctuary_research_cache") {
     const key = (args.model_family || "all").toLowerCase().trim();
     if (key === "all") {
